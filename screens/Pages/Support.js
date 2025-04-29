@@ -120,7 +120,6 @@ export default function Support() {
       newErrors.name = "Name is required";
       valid = false;
     }
-
     if (!formData.message.trim()) {
       newErrors.message = "Message cannot be empty";
       valid = false;
@@ -385,7 +384,6 @@ export default function Support() {
                     value={formData.email}
                     onChangeText={(value) => handleChange("email", value)}
                   />
-
                   <TextInput
                     style={[
                       styles.textArea,
@@ -434,13 +432,11 @@ const styles = StyleSheet.create({
     borderColor: "#EDF2FF",
     paddingHorizontal: 12,
     backgroundColor: "#fff",
-    // iOS Shadow
     shadowColor: "#4979FB",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, // Matches the 5% opacity
-    shadowRadius: 4, // Controls blur radius for softness
-    // Android Shadow
-    elevation: 3, // Adds a subtle shadow on Android
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
   },
   textArea: {
     height: 100,
@@ -451,12 +447,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     backgroundColor: "#fff",
     textAlignVertical: "top",
-    // iOS Shadow
     shadowColor: "#4979FB",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    // Android Shadow
     elevation: 3,
   },
   submitBtn: {

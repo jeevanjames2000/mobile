@@ -140,7 +140,6 @@ const PropertyCard = memo(
                     alt="bhk"
                     style={{ width: 12, height: 12 }}
                   />
-
                   <Text style={styles.featureText}>
                     {property.bedrooms !== "N/A"
                       ? `${property.bedrooms} BHK`

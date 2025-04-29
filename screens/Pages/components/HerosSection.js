@@ -38,7 +38,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setCityId } from "../../../store/slices/authSlice";
 import axios from "axios";
 import LocationImage from "../../../assets/location_icon.png";
-
 export default function HerosSection({ setSelectedCity }) {
   const dispatch = useDispatch();
   const [locations, setLocations] = useState([]);
@@ -83,7 +82,6 @@ export default function HerosSection({ setSelectedCity }) {
         return;
       }
       const parsedUserDetails = JSON.parse(storedDetails);
-
       const response = await axios.get(
         `https://meetowner.in/Api/api?table=users&mobile=${parsedUserDetails?.mobile}&key=meetowner_universal&transc=get_user_det_by_mobile`
       );

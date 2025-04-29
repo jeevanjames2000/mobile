@@ -2,7 +2,6 @@ import React from "react";
 import { FlatList } from "native-base";
 import { StyleSheet } from "react-native";
 import ExclusiveProperties from "../ExclusiveProperties";
-
 const ExclusivePropertiesWrapper = ({ activeTab, selectedCity }) => {
   return (
     <FlatList
@@ -15,7 +14,6 @@ const ExclusivePropertiesWrapper = ({ activeTab, selectedCity }) => {
     />
   );
 };
-
 const styles = StyleSheet.create({
   flatListContainer: {
     backgroundColor: "#fff",
@@ -23,5 +21,4 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
 });
-
 export default ExclusivePropertiesWrapper;

@@ -1,8 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-
 export const FilterOption = ({ label, selected, onPress, checkmark = false }) => {
   return (
     <TouchableOpacity
@@ -21,7 +19,6 @@ export const FilterOption = ({ label, selected, onPress, checkmark = false }) =>
     </TouchableOpacity>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -48,14 +45,12 @@ const styles = StyleSheet.create({
   },
   labelSelected: {
     color:"#f5f5f5",
-    
      fontWeight:'600'
   },
   checkContainer: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    
     justifyContent: "center",
     alignItems: "center",
     marginRight: 6,

@@ -8,14 +8,12 @@ const tabs = [
   { id: "Plot", label: "Plot" },
   { id: "Commercial", label: "Commercial" },
 ];
-
-// Mapping function for tab to property_for
 const mapTabToPropertyFor = (tab) => {
   const mapping = {
     Buy: "Sell",
     Rent: "Rent",
-    Plot: "Sell", // Default to Sell for Plot
-    Commercial: "Sell", // Default to Sell for Commercial
+    Plot: "Sell",
+    Commercial: "Sell",
   };
   return mapping[tab] || "Sell";
 };
@@ -23,18 +21,14 @@ export default function FilterTabs() {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.search.tab);
   const [activeTab, setActiveTab] = useState(data || "Buy");
-
   const handleTabChange = (id) => {
     setActiveTab(id);
     const payload = {
       tab: id,
       property_for: mapTabToPropertyFor(id),
-      // Reset fields to avoid stale data
       property_in: "",
       sub_type: "",
     };
-
-    // Set specific fields based on tab
     if (id === "Plot") {
       payload.sub_type = "Plot";
       payload.property_in = "";
@@ -42,20 +36,17 @@ export default function FilterTabs() {
       payload.property_in = "Commercial";
       payload.sub_type = "";
     } else if (id === "Buy") {
-      payload.property_in = "Residential"; // Default for Buy
-      payload.sub_type = "Apartment"; // Default for Buy
+      payload.property_in = "Residential";
+      payload.sub_type = "Apartment";
     } else if (id === "Rent") {
-      payload.property_in = "Residential"; // Default for Rent
-      payload.sub_type = "Apartment"; // Default for Rent
+      payload.property_in = "Residential";
+      payload.sub_type = "Apartment";
     }
-
     dispatch(setSearchData(payload));
   };
-
   useEffect(() => {
     setActiveTab(data || "Buy");
   }, [data]);
-
   return (
     <View style={styles.container}>
       {tabs.map((tab) => (
@@ -74,7 +65,6 @@ export default function FilterTabs() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -97,12 +87,10 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 12,
     color: "#000",
-
     fontFamily: 'PoppinsSemiBold',
   },
   activeTabText: {
     color: "#fff",
     fontWeight: "500",
-   
   },
 });

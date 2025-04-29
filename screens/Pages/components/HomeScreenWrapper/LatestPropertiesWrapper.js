@@ -2,7 +2,6 @@ import React from "react";
 import { FlatList } from "native-base";
 import LatestProperties from "../LatestProperties";
 import { StyleSheet } from "react-native";
-
 const LatestPropertiesWrapper = ({ activeTab, selectedCity }) => {
   return (
     <FlatList
@@ -17,13 +16,9 @@ const LatestPropertiesWrapper = ({ activeTab, selectedCity }) => {
     />
   );
 };
-
 const styles = StyleSheet.create({
   flatListContainer: {
     backgroundColor: "# CLOSED",
-    // paddingHorizontal: 10,
-    // paddingVertical: 10,
   },
 });
-
 export default LatestPropertiesWrapper;

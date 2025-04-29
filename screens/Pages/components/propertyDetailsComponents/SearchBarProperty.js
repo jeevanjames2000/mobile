@@ -28,8 +28,6 @@ import debounce from "lodash/debounce";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch, useSelector } from "react-redux";
 import { setBHK, setOccupancy, setPropertyIn, setSearchData, setSubType,setLocation,setPrice } from "../../../../store/slices/searchSlice";
-
-// Mapping function for tab to property_for
 const mapTabToPropertyFor = (tab) => {
   const mapping = {
     Buy: "Sell",
@@ -37,11 +35,8 @@ const mapTabToPropertyFor = (tab) => {
     Plot: "Sell",
     Commercial: "Sell",
   };
-  return mapping[tab] || "Sell"; // Default to "Sell" if tab is invalid
+  return mapping[tab] || "Sell";
 };
-
-
-
 const SearchBarProperty = ({
   searchQuery,
   setSearchQuery,
@@ -49,25 +44,20 @@ const SearchBarProperty = ({
   fetchProperties,
   filters,
   setFilters,
-  selectedCity="Hyderabad", // Added prop for city
+  selectedCity="Hyderabad",
 }) => {
   const { isOpen: isFilterOpen, onOpen: onOpenFilter, onClose: onCloseFilter } = useDisclose();
   const { isOpen: isSortOpen, onOpen: onOpenSort, onClose: onCloseSort } = useDisclose();
-
   const dispatch = useDispatch();
-
   const { tab, property_in, sub_type, bhk, occupancy, location ,price } = useSelector(
     (state) => state.search
   );
-
   const [localSearchQuery, setLocalSearchQuery] = useState(location || searchQuery || "");
   const [suggestions, setSuggestions] = useState([]);
   const [recentSuggestions, setRecentSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
   const MAX_CACHE_SIZE = 5;
-
-    // State for filter options synced with Redux
     const [selectedBuildingType, setSelectedBuildingType] = useState(
       property_in || filters.property_in || (tab === "Commercial" ? "Commercial" : tab === "Plot" ? "" : "Residential")
     );
@@ -77,16 +67,12 @@ const SearchBarProperty = ({
     const [selectedBedrooms, setSelectedBedrooms] = useState(bhk || filters.bedrooms || "");
     const [selectedPossession, setSelectedPossession] = useState(occupancy || filters.occupancy || "");
     const [selectedSort, setSelectedSort] = useState(price || filters.priceFilter || "Relevance");
-  
-    // Sort options array
     const sortOptions = [
       "Relevance",
       "Price: Low to High",
       "Price: High to Low",
       "Newest First",
     ];
-  
-    // Sync local state with Redux and filters
     useEffect(() => {
       setLocalSearchQuery(location || searchQuery || "");
       setSelectedBuildingType(
@@ -98,13 +84,10 @@ const SearchBarProperty = ({
       setSelectedBedrooms(bhk || filters.bedrooms || "");
       setSelectedPossession(occupancy || filters.occupancy || "");
       setSelectedSort(price || filters.priceFilter || "Relevance");
-      // Reset bedrooms for non-residential types
       if (["Plot", "Land", "Others"].includes(sub_type) || property_in === "Commercial") {
         setSelectedBedrooms("");
       }
     }, [tab, property_in, sub_type, bhk, occupancy, location, price, searchQuery, filters]);
-
-  // Load recent suggestions from AsyncStorage on mount
   useEffect(() => {
     const loadRecentSuggestions = async () => {
       try {
@@ -118,8 +101,6 @@ const SearchBarProperty = ({
     };
     loadRecentSuggestions();
   }, []);
-
-  // Save a suggestion to AsyncStorage
   const saveToCache = async (newSuggestion) => {
     try {
       let updatedSuggestions = [newSuggestion, ...recentSuggestions];
@@ -132,8 +113,6 @@ const SearchBarProperty = ({
       console.error("Error saving to cache:", error);
     }
   };
-
-  // Fetch suggestions based on city and query
   const fetchSuggestions = async (city, query) => {
     if (!query || query.length < 3 || !city) {
       setSuggestions(recentSuggestions);
@@ -169,19 +148,15 @@ const SearchBarProperty = ({
       setLoading(false);
     }
   };
-
-  // Debounce the fetchSuggestions function
   const debouncedFetchSuggestions = useCallback(
     debounce((city, query) => fetchSuggestions(city, query), 300),
     [recentSuggestions]
   );
-
-  // Handle search input
   const handleSearch = useCallback(
     (query) => {
       setLocalSearchQuery(query);
       setSearchQuery(query);
-      dispatch(setLocation(query)); // Update Redux location
+      dispatch(setLocation(query));
       handleLocationSearch(query);
       const city = selectedCity;
       if (query.trim().length >= 3) {
@@ -192,28 +167,22 @@ const SearchBarProperty = ({
     },
     [selectedCity, setSearchQuery, handleLocationSearch, recentSuggestions, debouncedFetchSuggestions, dispatch]
   );
-
-  // Handle clear input
   const handleClear = () => {
     setLocalSearchQuery("");
     setSearchQuery("");
-    dispatch(setLocation("")); // Clear Redux location
+    dispatch(setLocation(""));
     handleLocationSearch("");
     setSuggestions([]);
     fetchProperties(true, filters, "Hyderabad");
   };
-
-  // Handle suggestion selection
   const handleSuggestionSelect = (item) => {
     setLocalSearchQuery(item.label);
     setSearchQuery(item.label);
-    dispatch(setLocation(item.label)); // Update Redux location
+    dispatch(setLocation(item.label));
     handleLocationSearch(item.label);
     setSuggestions([]);
     fetchProperties(true, filters, item.label);
   };
-
-  // Render suggestion item
   const renderSuggestionItem = ({ item }) => (
     <TouchableOpacity
       style={styles.suggestionItem}
@@ -222,10 +191,8 @@ const SearchBarProperty = ({
       <Text style={styles.suggestionText}>{item.label}</Text>
     </TouchableOpacity>
   );
-
   const toggleBuildingType = (type) => {
     setSelectedBuildingType(type);
-    // Reset sub_type and bedrooms for Commercial
     if (type === "Commercial") {
       setSelectedSubPropertyType("");
       setSelectedBedrooms("");
@@ -233,19 +200,14 @@ const SearchBarProperty = ({
       setSelectedSubPropertyType("Apartment");
     }
   };
-
   const toggleSubPropertyType = (type) => {
     setSelectedSubPropertyType(type);
-    // Reset bedrooms for Plot, Land, or Others
     if (["Plot", "Land", "Others"].includes(type)) {
       setSelectedBedrooms("");
     }
   };
-
   const toggleBedroom = (type) => setSelectedBedrooms(type);
   const togglePossession = (type) => setSelectedPossession(type);
-
-  // Apply filters
   const applyFilters = () => {
     const updatedFilters = {
       ...filters,
@@ -259,13 +221,11 @@ const SearchBarProperty = ({
       property_status: 1,
     };
     setFilters(updatedFilters);
-    // Update Redux state for filters
     dispatch(setPropertyIn(selectedBuildingType));
     dispatch(setSubType(selectedSubPropertyType));
     dispatch(setBHK(selectedBedrooms));
     dispatch(setOccupancy(selectedPossession));
     dispatch(setPrice(selectedSort));
-    // Reset bedrooms for non-residential types
     if (["Plot", "Land", "Others"].includes(selectedSubPropertyType) || selectedBuildingType === "Commercial") {
       dispatch(setBHK(""));
       updatedFilters.bedrooms = "";
@@ -273,8 +233,6 @@ const SearchBarProperty = ({
     fetchProperties(true, updatedFilters, localSearchQuery.trim() || "Hyderabad");
     onCloseFilter();
   };
-
-  // Clear all filters
   const clearAllFilters = () => {
     const defaultBuildingType = tab === "Commercial" ? "Commercial" : tab === "Plot" ? "" : "Residential";
     const defaultSubType = tab === "Plot" ? "Plot" : tab === "Commercial" ? "" : "Apartment";
@@ -295,7 +253,6 @@ const SearchBarProperty = ({
       property_status: 1,
     };
     setFilters(defaultFilters);
-    // Clear Redux state
     dispatch(setPropertyIn(defaultBuildingType));
     dispatch(setSubType(defaultSubType));
     dispatch(setBHK(""));
@@ -305,22 +262,17 @@ const SearchBarProperty = ({
     fetchProperties(true, defaultFilters, "Hyderabad");
     onCloseFilter();
   };
-
-  // Handle sort selection
   const handleSortSelect = (sortOption) => {
     setSelectedSort(sortOption);
     const updatedFilters = { ...filters, priceFilter: sortOption };
     setFilters(updatedFilters);
-    dispatch(setPrice(sortOption)); // Update Redux price
+    dispatch(setPrice(sortOption));
     fetchProperties(true, updatedFilters, localSearchQuery.trim() || "Hyderabad");
     onCloseSort();
   };
-
-
-
   return (
     <View style={styles.container}>
-      {/* Search Bar (70% width) */}
+      {}
       <View style={styles.searchWrapper}>
         <View style={styles.searchContainer}>
           <View style={styles.inputContainer}>
@@ -362,8 +314,7 @@ const SearchBarProperty = ({
             </Box>
           </TouchableOpacity>
         </View>
-
-        {/* Suggestions Dropdown */}
+        {}
         {loading ? (
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="small" color="#999" />
@@ -378,11 +329,8 @@ const SearchBarProperty = ({
             />
           </View>
         ) : null}
-      
-
       </View>
-
-      {/* Sort Button (30% width) */}
+      {}
       <View style={styles.sortWrapper}>
         <TouchableOpacity style={styles.sortContainer} onPress={onOpenSort}>
           <HStack alignItems="center">
@@ -396,8 +344,7 @@ const SearchBarProperty = ({
           </HStack>
         </TouchableOpacity>
       </View>
-
-      {/* Filter Actionsheet */}
+      {}
       <Actionsheet isOpen={isFilterOpen} onClose={onCloseFilter}>
         <Actionsheet.Content maxHeight={700} backgroundColor={"#FFFFFF"}>
           <TouchableOpacity style={styles.closeIcon} onPress={clearAllFilters}>
@@ -467,7 +414,6 @@ const SearchBarProperty = ({
                     selected={selectedBedrooms === "1 BHK"}
                     onPress={() => toggleBedroom("1 BHK")}
                   />
-                
                   <FilterOption
                     label="2 BHK"
                     selected={selectedBedrooms === "2 BHK"}
@@ -617,8 +563,7 @@ const SearchBarProperty = ({
           </View>
         </Actionsheet.Content>
       </Actionsheet>
-
-      {/* Sort Actionsheet */}
+      {}
       <Actionsheet isOpen={isSortOpen} onClose={onCloseSort}>
         <Actionsheet.Content backgroundColor="#FFFFFF">
           <TouchableOpacity style={styles.closeIcon} onPress={onCloseSort}>
@@ -652,7 +597,6 @@ const SearchBarProperty = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -662,12 +606,12 @@ const styles = StyleSheet.create({
   },
   searchWrapper: {
     flex: 0.8,
-    position: "relative", // Anchor for absolute-positioned suggestions
+    position: "relative",
   },
   sortWrapper: {
     flex: 0.2,
     marginLeft: 5,
-    zIndex: 1, // Below suggestions
+    zIndex: 1,
   },
   searchContainer: {
     flexDirection: "row",
@@ -681,7 +625,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
-    zIndex: 1, // Below suggestions
+    zIndex: 1,
   },
   inputContainer: {
     flex: 1,
@@ -736,14 +680,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
-    zIndex: 10, // Above search bar, below suggestions
+    zIndex: 10,
   },
   suggestionsContainer: {
     position: "absolute",
-    top: 50, // Position below search bar (adjust based on searchContainer height)
+    top: 50,
     left: 0,
     right: 0,
-    zIndex: 100, // High zIndex to appear above all elements
+    zIndex: 100,
   },
   suggestionsList: {
     maxHeight: 200,
@@ -753,7 +697,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
-    elevation: 5, // Higher elevation for Android
+    elevation: 5,
   },
   suggestionItem: {
     padding: 10,
@@ -843,5 +787,4 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsSemiBold",
   },
 });
-
 export default SearchBarProperty;

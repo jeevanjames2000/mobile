@@ -1,6 +1,5 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-
 export const FilterSection = ({ title, children }) => {
   return (
     <View style={styles.container}>
@@ -9,10 +8,8 @@ export const FilterSection = ({ title, children }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
-    // padding:20
     paddingHorizontal:20,
     paddingTop:10,
   },

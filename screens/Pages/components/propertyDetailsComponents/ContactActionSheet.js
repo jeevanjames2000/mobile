@@ -12,16 +12,13 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "../../../../config";
 import { Toast } from "native-base";
-
 const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
   const [formData, setFormData] = useState({ name: "", mobile: "", email: "" });
   const [userInfo, setUserInfo] = useState(null);
   const [owner, setOwner] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-
   const getOwnerDetails = useCallback(async () => {
     if (!selectedPropertyId?.unique_property_id) return;
-
     try {
       const res = await fetch(
         `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${selectedPropertyId.unique_property_id}`
@@ -34,7 +31,6 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
       console.error("Owner fetch failed", err);
     }
   }, [selectedPropertyId]);
-
   const loadUserDetails = async () => {
     try {
       const storedData = await AsyncStorage.getItem("userdetails");
@@ -55,12 +51,10 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
       });
     }
   };
-
   useEffect(() => {
     loadUserDetails();
     getOwnerDetails();
   }, [selectedPropertyId]);
-
   const handleAPI = async () => {
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
@@ -82,7 +76,6 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
         },
       },
     };
-
     try {
       await axios.post(
         "https://server.gallabox.com/devapi/messages/whatsapp",
@@ -95,7 +88,6 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
           },
         }
       );
-
       Toast.show({
         type: "success",
         text1: "Details submitted successfully",
@@ -107,32 +99,27 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
       });
     }
   };
-
   const handleSchedule = async () => {
     if (!formData.name || !formData.mobile) {
       Alert.alert("Missing Fields", "Please fill in all required fields.");
       return;
     }
-
     try {
       setIsLoading(true);
-
       await axios.post(`${config.awsApiUrl}/enquiry/v1/contactSeller`, {
         unique_property_id: selectedPropertyId.unique_property_id,
         user_id: userInfo.user_id,
         name: formData.name,
         mobile: formData.mobile,
       });
-
       await handleAPI();
-      onClose(); // close modal after submission
+      onClose();
     } catch (err) {
       Toast.show({ type: "error", text1: "Submission failed" });
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <Modal
       animationType="slide"
@@ -148,7 +135,6 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
               <Text style={styles.closeButton}>✕</Text>
             </TouchableOpacity>
           </View>
-
           <View style={styles.formContainer}>
             {["name", "mobile", "email"].map((field, index) => (
               <React.Fragment key={index}>
@@ -166,7 +152,6 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
                 />
               </React.Fragment>
             ))}
-
             <TouchableOpacity
               style={styles.submitButton}
               onPress={handleSchedule}
@@ -182,7 +167,6 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
     </Modal>
   );
 };
-
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
@@ -246,5 +230,4 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsMedium",
   },
 });
-
 export default ContactActionSheet;

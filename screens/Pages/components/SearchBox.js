@@ -333,13 +333,11 @@ export default function SearchBox() {
             />
           </View>
         </View>
-
         <SearchBarSection
           selectedCity={selectedLocation}
           setSearchQuery={setSearchQuery}
           setLocation={(loc) => dispatch(setLocation(loc))}
         />
-
         <FilterSection title="Building Type">
           <View style={styles.filterOptionsRow}>
             <FilterOption

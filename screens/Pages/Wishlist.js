@@ -40,7 +40,6 @@ import {
 import PropertyImage from "./components/propertyDetailsComponents/PropertyImage";
 import WhatsAppIcon from "../../assets/propertyicons/whatsapp.png";
 import ApprovedIcon from "../../assets/propertyicons/verified.png";
-
 export default function Wishlist() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -73,7 +72,6 @@ export default function Wishlist() {
     if (value >= 1000) return (value / 1000).toFixed(2) + " K";
     return value?.toString();
   };
-
   const contactNow = (item) => {};
   const PropertyCard = memo(({ item, onShare, onFav, onNavigate }) => {
     const area = item.builtup_area
@@ -235,7 +233,6 @@ export default function Wishlist() {
       setIsLoading(false);
     }
   };
-
   const handleInterestAPI = async (property) => {
     if (!userInfo) {
       Toast.show({
@@ -271,7 +268,6 @@ export default function Wishlist() {
       console.error("Error posting interest:", error);
     }
   };
-
   const shareProperty = async (property) => {
     try {
       await Share.share({
@@ -301,7 +297,6 @@ export default function Wishlist() {
     dispatch(setPropertyDetails(item));
     navigation.navigate("PropertyDetails");
   };
-
   useFocusEffect(
     useCallback(() => {
       const getData = async () => {
@@ -328,11 +323,9 @@ export default function Wishlist() {
           });
         }
       };
-
       getData();
     }, [])
   );
-
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safeArea}>
@@ -395,7 +388,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   containerVstack: {
-    // borderRadius: 10,
     backgroundColor: "#ffffff",
     margin: 1,
     overflow: "hidden",

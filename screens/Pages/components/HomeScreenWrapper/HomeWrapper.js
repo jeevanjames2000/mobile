@@ -8,23 +8,18 @@ import HighDealPropertiesWrapper from "./HighDemandProjectsWrapper";
 import ExclusivePropertiesWrapper from "./ExclusivePropertiesWrapper";
 import HousePickPropertiesWrapper from "./HousePickPropertiesWrapper";
 import { StyleSheet } from "react-native";
-
 const HomeWrapper = ({ activeTab, selectedCity }) => {
   const navigation = useNavigation(); 
   const [loading, setLoading] = useState(true);
-
   const handlePropertiesLists = useCallback(() => {
     navigation.navigate("PropertyList", { activeTab });
   }, [navigation, activeTab]); 
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
     }, 2000);
-
     return () => clearTimeout(timer);
   }, []);
-
   const handleApiLoaded = () => {
     setLoading(false);
   };
@@ -35,8 +30,6 @@ const HomeWrapper = ({ activeTab, selectedCity }) => {
       </View>
     );
   }
-
-
   return (
     <View style={styles.container}>
       <HStack py={2} mx={2} justifyContent={"space-between"}>
@@ -49,9 +42,7 @@ const HomeWrapper = ({ activeTab, selectedCity }) => {
           </NBText>
         </TouchableOpacity>
       </HStack>
-
       <LatestPropertiesWrapper activeTab={activeTab} selectedCity={selectedCity}  onApiLoaded={handleApiLoaded}  />
-
       <HStack py={2} mx={2} justifyContent={"space-between"}>
         <NBText fontSize={20} fontFamily={"PoppinsSemiBold"}>
           Best Deal Properties
@@ -62,9 +53,7 @@ const HomeWrapper = ({ activeTab, selectedCity }) => {
           </NBText>
         </TouchableOpacity>
       </HStack>
-
       <BestDealPropertiesWrapper activeTab={activeTab} selectedCity={selectedCity}  onApiLoaded={handleApiLoaded}  />
-
       <HStack py={2} mx={2} justifyContent={"space-between"}>
         <NBText fontSize={20} fontFamily={"PoppinsSemiBold"}>
           Best House Pick's
@@ -75,9 +64,7 @@ const HomeWrapper = ({ activeTab, selectedCity }) => {
           </NBText>
         </TouchableOpacity>
       </HStack>
-
       <HousePickPropertiesWrapper activeTab={activeTab} selectedCity={selectedCity}  onApiLoaded={handleApiLoaded}  />
-
       <HStack py={2} mx={2} justifyContent={"space-between"}>
         <NBText fontSize={20} fontFamily={"PoppinsSemiBold"}>
           High Demand Projects
@@ -88,20 +75,16 @@ const HomeWrapper = ({ activeTab, selectedCity }) => {
           </NBText>
         </TouchableOpacity>
       </HStack>
-
       <HighDealPropertiesWrapper activeTab={activeTab} selectedCity={selectedCity}   onApiLoaded={handleApiLoaded} />
-
       <HStack py={2} mx={2} justifyContent={"space-between"}>
         <NBText fontSize={20} fontFamily={"PoppinsSemiBold"}>
           MeetOwner Exclusive
         </NBText>
       </HStack>
-
       <ExclusivePropertiesWrapper activeTab={activeTab} selectedCity={selectedCity}   onApiLoaded={handleApiLoaded} />
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     marginTop: 20,
@@ -114,5 +97,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-
 export default HomeWrapper;

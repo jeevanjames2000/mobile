@@ -11,15 +11,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { debounce } from "lodash";
 import LocationImage from "../../../../assets/location_icon.png";
-
 export default function SearchBarSection({ selectedCity, setSearchQuery, setLocation }) {
   const navigation = useNavigation();
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
-
-  // Fetch suggestions based on city and query
   const fetchSuggestions = async (city, query) => {
     if (!query || query.length < 3 || !city) {
       setSuggestions([]);
@@ -33,7 +30,6 @@ export default function SearchBarSection({ selectedCity, setSearchQuery, setLoca
         )}&city=${encodeURIComponent(city)}`
       );
       const data = await response.json();
-      // Map API response to expected format
       const formattedSuggestions = data.map((item) => ({
         label: item.locality,
         value: item.locality,
@@ -46,20 +42,17 @@ export default function SearchBarSection({ selectedCity, setSearchQuery, setLoca
       setLoading(false);
     }
   };
-
   const debouncedFetchSuggestions = useCallback(
     debounce((city, query) => {
       fetchSuggestions(city, query);
     }, 300),
     []
   );
-
-  // Handle search input
   const handleSearch = useMemo(
     () => (query) => {
       setLocalSearchQuery(query);
-      setSearchQuery(query); // Update parent state
-      setLocation(query); // Update location in Redux
+      setSearchQuery(query);
+      setLocation(query);
       if (query.trim().length >= 3 && selectedCity?.label) {
         debouncedFetchSuggestions(selectedCity.label, query);
       } else {
@@ -68,30 +61,25 @@ export default function SearchBarSection({ selectedCity, setSearchQuery, setLoca
     },
     [selectedCity, setSearchQuery, setLocation]
   );
-
-  // Handle clear input
   const handleClear = () => {
     setLocalSearchQuery("");
     setSearchQuery("");
     setLocation("");
     setSuggestions([]);
   };
-
-  // Render suggestion item
   const renderSuggestionItem = ({ item }) => (
     <TouchableOpacity
       style={styles.suggestionItem}
       onPress={() => {
         setLocalSearchQuery(item.label);
-        setSearchQuery(item.label); // Update parent state with locality
-        setLocation(item.label); // Update location in Redux
+        setSearchQuery(item.label);
+        setLocation(item.label);
         setSuggestions([]);
       }}
     >
       <Text style={styles.suggestionText}>{item.label}</Text>
     </TouchableOpacity>
   );
-
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -122,7 +110,7 @@ export default function SearchBarSection({ selectedCity, setSearchQuery, setLoca
       ) : suggestions.length > 0 ? (
         <FlatList
           data={suggestions}
-          keyExtractor={(item) => item.label} // Use locality as unique key
+          keyExtractor={(item) => item.label}
           renderItem={renderSuggestionItem}
           style={styles.suggestionsList}
         />
@@ -130,7 +118,6 @@ export default function SearchBarSection({ selectedCity, setSearchQuery, setLoca
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#ffffff",

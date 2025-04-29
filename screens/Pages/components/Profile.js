@@ -39,7 +39,6 @@ export default function Profile() {
   const [userFile, setUserFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
-
   const handleEditProfileImage = async () => {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -61,7 +60,6 @@ export default function Profile() {
       setImageModalVisible(true);
     }
   };
-
   //logout api
   const performLogout = async () => {
     setLoading(true);
@@ -82,13 +80,10 @@ export default function Profile() {
       setLoading(false);
     }, 1000);
   };
-
   const [userDetails, setUserDetails] = useState(null);
   const CACHE_DURATION = 10 * 60 * 1000;
-
   const fetchProfileDetails = async () => {
     try {
-      // Retrieve user details from AsyncStorage
       const storedDetails = await AsyncStorage.getItem("userdetails");
       if (!storedDetails) {
         Toast.show({
@@ -101,7 +96,6 @@ export default function Profile() {
       }
       const parsedUserDetails = JSON.parse(storedDetails);
       setUserDetails(parsedUserDetails);
-
       const cachedData = await AsyncStorage.getItem("profileData");
       if (cachedData) {
         const { data, timestamp } = JSON.parse(cachedData);
@@ -121,14 +115,10 @@ export default function Profile() {
           return;
         }
       }
-
-      // Fetch profile data from API
       const response = await axios.get(
         `https://api.meetowner.in/user/v1/getProfile?user_id=${parsedUserDetails?.user_id}`
       );
       const fetchedData = response.data;
-
-      // Check if response is valid
       if (fetchedData && typeof fetchedData === "object") {
         setData(fetchedData);
         setName(fetchedData.name || "N/A");
@@ -141,7 +131,6 @@ export default function Profile() {
         setGstNumber(fetchedData.gst_number || "N/A");
         setReraNumber(fetchedData.rera_number || "N/A");
         setPhoto(fetchedData.photo || null);
-
         await AsyncStorage.setItem(
           "profileData",
           JSON.stringify({ data: fetchedData, timestamp: new Date().getTime() })
@@ -164,7 +153,6 @@ export default function Profile() {
       });
     }
   };
-
   React.useEffect(() => {
     const backAction = () => {
       if (navigation.canGoBack()) {
@@ -183,11 +171,9 @@ export default function Profile() {
     );
     return () => backHandler.remove();
   }, []);
-
   useEffect(() => {
     fetchProfileDetails();
   }, []);
-
   const handleLogout = () => {
     Alert.alert(
       "Confirm Logout",
@@ -199,7 +185,6 @@ export default function Profile() {
       { cancelable: false }
     );
   };
-
   //submit profile details Edit profile details
   const submitProfileDetails = async () => {
     if (!name || name.trim() === "") {
@@ -277,13 +262,10 @@ export default function Profile() {
       setLoading(false);
     }
   };
-
   const [expandedAccordion, setExpandedAccordion] = useState(null);
-
   const toggleAccordion = (section) => {
     setExpandedAccordion(expandedAccordion === section ? null : section);
   };
-
   const submitProfileImage = async () => {
     setModalVisible(false);
     setImageModalVisible(false);
@@ -628,7 +610,6 @@ export default function Profile() {
               keyboardType="email-address"
               onChangeText={(text) => setEmail(text)}
             />
-
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
@@ -792,7 +773,6 @@ const styles = StyleSheet.create({
   accordionText: {
     fontSize: 14,
     color: "black",
-
     fontFamily: "Poppins",
   },
   modalContainer: {
@@ -821,7 +801,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginVertical: 10,
     backgroundColor: "#fff",
-
     elevation: 3,
   },
   buttonContainer: {

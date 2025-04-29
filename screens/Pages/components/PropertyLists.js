@@ -121,7 +121,6 @@ const PropertyCard = memo(
                     )}
                 </View>
               )}
-
               {item.sub_type === "Plot" && (
                 <Text style={styles.possessionText}>
                   {item.possession_status?.toLowerCase() === "immediate"
@@ -129,7 +128,6 @@ const PropertyCard = memo(
                     : "Future"}
                 </Text>
               )}
-
               <Text style={styles.possesionText}>|</Text>
               <Text style={styles.possesionText}>
                 {["Plot", "Land"].includes(item.sub_type)
@@ -600,7 +598,6 @@ export default function PropertyLists({ route }) {
       return {};
     }
   };
-
   const handleFavourites = useCallback(
     async (item, action) => {
       console.log("action: ", action);
@@ -655,7 +652,6 @@ export default function PropertyLists({ route }) {
     setModalVisible(true);
   };
   const [owner, setOwner] = useState("");
-
   const handleWhatsappChat = useCallback(
     async (property) => {
       console.log("property: ", property);
@@ -716,7 +712,6 @@ export default function PropertyLists({ route }) {
     },
     [owner, userInfo, getOwnerDetails]
   );
-
   const renderPropertyCard = useCallback(
     ({ item }) => (
       <PropertyCard

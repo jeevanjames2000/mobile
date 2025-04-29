@@ -31,7 +31,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { Modal, TouchableWithoutFeedback } from "react-native";
-
 const PropertyCard = memo(
   ({ item, onPress, onFav, onShare, intrestedProperties, enquireNow, isHighlighted = false }) => {
     const isInitiallyInterested = (intrestedProperties || [])?.some(
@@ -39,12 +38,10 @@ const PropertyCard = memo(
         prop?.property_details?.unique_property_id === item?.unique_property_id
     );
     const [isLiked, setIsLiked] = useState(isInitiallyInterested);
-
     const handleFavClick = () => {
       onFav(item, !isLiked);
       setIsLiked((prev) => !prev);
     };
-
     const property = {
       image: `https://api.meetowner.in/uploads/${item?.image || "https://placehold.co/600x400"}`,
       title: item?.property_name || "N/A",
@@ -57,7 +54,6 @@ const PropertyCard = memo(
       bathrooms: item?.bathrooms || "N/A",
       car_parking: item?.car_parking || "N/A",
     };
-
     return (
       <TouchableOpacity
         style={styles.ownerGridItem}
@@ -73,7 +69,6 @@ const PropertyCard = memo(
     );
   }
 );
-
 const formatToIndianCurrency = (value) => {
   if (!value || isNaN(value)) return "N/A";
   const numValue = parseFloat(value);
@@ -82,7 +77,6 @@ const formatToIndianCurrency = (value) => {
   if (numValue >= 1000) return (numValue / 1000).toFixed(2) + " K";
   return numValue.toString();
 };
-
 export default function ExclusiveProperties({ activeTab }) {
   const intrests = useSelector((state) => state.property.intrestedProperties);
   const dispatch = useDispatch();
@@ -94,8 +88,6 @@ export default function ExclusiveProperties({ activeTab }) {
   const [selectedPropertyId, setSelectedPropertyId] = useState(null);
   const [type, setType] = useState("");
   const [userInfo, setUserInfo] = useState("");
-
-
    const fetchProperties = useCallback(
         async (reset = true) => {
           setLoading(true);
@@ -109,7 +101,6 @@ export default function ExclusiveProperties({ activeTab }) {
                 ? data.results
                 : [...properties, ...data.results];
               setProperties(newProperties);
-             
             } 
           } catch (error) {
             console.error("Error fetching properties:", error);
@@ -120,14 +111,6 @@ export default function ExclusiveProperties({ activeTab }) {
         },
         [activeTab, properties]
       );
-
-  
-
- 
- 
-
-  
-
   useEffect(() => {
     const getData = async () => {
       const data = await AsyncStorage.getItem("userdetails");
@@ -136,35 +119,20 @@ export default function ExclusiveProperties({ activeTab }) {
     };
     getData();
     fetchProperties(true);
-    
   }, []);
-
   useEffect(() => {
     const interval = setInterval(() => {
-     
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
-
-
-
-
   const handleNavigate = useCallback((item) => {
     dispatch(setPropertyDetails(item));
     navigation.navigate("PropertyDetails");
   }, [dispatch, navigation]);
-
-
-
-  
-
-
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchProperties(true);
   };
-
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -173,9 +141,7 @@ export default function ExclusiveProperties({ activeTab }) {
       }
     >
       <View style={styles.container}>
-        
-
-        {/* Grid Layout for 4 Cards */}
+        {}
         {loading ? (
           <NBText textAlign={"center"}>Loading...</NBText>
         ) : properties.length === 0 ? (
@@ -201,7 +167,6 @@ export default function ExclusiveProperties({ activeTab }) {
           </View>
         )}
       </View>
-
       <Modal
         transparent={true}
         animationType="slide"
@@ -230,7 +195,6 @@ export default function ExclusiveProperties({ activeTab }) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
@@ -267,7 +231,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   ownerGridItem: {
-    width: "48%", // Almost half width with a small gap
+    width: "48%",
     marginBottom: 15,
   },
   imageContainer: {
@@ -284,6 +248,4 @@ const styles = StyleSheet.create({
     color: "#000",
     fontFamily: 'PoppinsBold',
   },
-  
-  
 });

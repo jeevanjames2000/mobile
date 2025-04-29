@@ -2,13 +2,11 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
 import BuyImage from '../../../../assets/propertyicons/buy.png';
 import CommercialImage from '../../../../assets/propertyicons/commercial.png';
-import HouseImage from '../../../../assets/propertyicons/house.png'; // Assuming corrected path
-import PLotImage from '../../../../assets/propertyicons/plot.png'; // Assuming corrected path
-
+import HouseImage from '../../../../assets/propertyicons/house.png';
+import PLotImage from '../../../../assets/propertyicons/plot.png';
 export const PropertyTypeIcon = ({ type, icon, selected = false, onPress }) => {
   const renderIcon = () => {
     const imageStyle = { width: 32, height: 32, tintColor: selected ? "#fff" : "#000" };
-
     switch (icon) {
       case "home":
         return <Image source={BuyImage} style={imageStyle} alt="home" />;
@@ -22,7 +20,6 @@ export const PropertyTypeIcon = ({ type, icon, selected = false, onPress }) => {
         return <Image source={HouseImage} style={imageStyle} alt="default" />;
     }
   };
-
   return (
     <TouchableOpacity
       style={styles.container}
@@ -41,11 +38,9 @@ export const PropertyTypeIcon = ({ type, icon, selected = false, onPress }) => {
     </TouchableOpacity>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-   
   },
   iconContainer: {
     width: 60,

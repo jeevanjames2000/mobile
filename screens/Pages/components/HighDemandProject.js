@@ -39,9 +39,7 @@ import location from "../../../assets/propertyicons/location.png";
 import parking from "../../../assets/propertyicons/parking.png";
 import shower from "../../../assets/propertyicons/shower.png";
 import yards from "../../../assets/propertyicons/yards.png";
-
 const PropertyCard = memo(({ item, onPress }) => {
-  // Map item properties to the example's property object structure
   const property = {
     image: `https://api.meetowner.in/uploads/${
       item?.image || "https://placehold.co/600x400"
@@ -51,15 +49,14 @@ const PropertyCard = memo(({ item, onPress }) => {
       ? formatToIndianCurrency(item?.property_cost)
       : "N/A",
     location: item?.google_address || "N/A",
-    area: item?.area || "N/A", // Adjust if your API uses a different field, e.g., item.plot_area
-    facing: item?.facing || "N/A", // Adjust if your API uses a different field, e.g., item.direction
+    area: item?.area || "N/A",
+    facing: item?.facing || "N/A",
     forSale: item?.property_for === "Sell",
     bedrooms: item?.bedrooms || "N/A",
     bathrooms: item?.bathroom || "N/A",
     car_parking: item?.car_parking || "N/A",
     bike_parking: item?.bike_parking || "N/A",
   };
-
   return (
     <View style={[styles.highlightedContainer]}>
       <TouchableOpacity
@@ -87,13 +84,11 @@ const PropertyCard = memo(({ item, onPress }) => {
               {property.location}
             </Text>
           </View>
-
           <View style={styles.featuresContainer}>
             {/* <View style={styles.featureItem}>
                 <Ionicons name="square-outline" size={14} color="#000" />
                 <Text style={styles.highlightedFeatureText}>{property.area} Sq.yd</Text>
               </View> */}
-
             <View style={styles.featureItem}>
               <View style={styles.highlightedDirectionIcon}>
                 <Image
@@ -106,7 +101,6 @@ const PropertyCard = memo(({ item, onPress }) => {
                 {property.facing}
               </Text>
             </View>
-
             <View style={styles.featureItem}>
               <Image
                 alt="bhk"
@@ -119,7 +113,6 @@ const PropertyCard = memo(({ item, onPress }) => {
                   : "N/A"}
               </Text>
             </View>
-
             <View style={styles.featureItem}>
               <Image
                 alt="shower"
@@ -132,7 +125,6 @@ const PropertyCard = memo(({ item, onPress }) => {
                   : "N/A"}
               </Text>
             </View>
-
             <View style={styles.featureItem}>
               <Image
                 alt="parking"
@@ -151,7 +143,6 @@ const PropertyCard = memo(({ item, onPress }) => {
     </View>
   );
 });
-
 const formatToIndianCurrency = (value) => {
   if (!value || isNaN(value)) return "N/A";
   const numValue = parseFloat(value);
@@ -160,7 +151,6 @@ const formatToIndianCurrency = (value) => {
   if (numValue >= 1000) return (numValue / 1000).toFixed(2) + " K";
   return numValue.toString();
 };
-
 export default function HighDemandProperties({ activeTab }) {
   const intrests = useSelector((state) => state.property.intrestedProperties);
   const dispatch = useDispatch();
@@ -170,13 +160,10 @@ export default function HighDemandProperties({ activeTab }) {
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const flatListRef = useRef(null);
   const navigation = useNavigation();
-
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState(null);
   const [type, setType] = useState("");
-
   const [userInfo, setUserInfo] = useState("");
-
   const fetchProperties = useCallback(
     async (reset = true) => {
       setLoading(true);
@@ -185,7 +172,6 @@ export default function HighDemandProperties({ activeTab }) {
           "https://api.meetowner.in/listings/v1/getHighDemandProjects"
         );
         const data = await response.json();
-
         if (data.results && data.results.length > 0) {
           const newProperties = reset
             ? data.results
@@ -201,7 +187,6 @@ export default function HighDemandProperties({ activeTab }) {
     },
     [activeTab, properties]
   );
-
   useEffect(() => {
     const getData = async () => {
       const data = await AsyncStorage.getItem("userdetails");
@@ -211,14 +196,12 @@ export default function HighDemandProperties({ activeTab }) {
     getData();
     fetchProperties(true);
   }, []);
-
   useEffect(() => {
     const interval = setInterval(() => {
       fetchProperties(true);
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
   const handleNavigate = useCallback(
     (item) => {
       dispatch(setPropertyDetails(item));
@@ -226,22 +209,18 @@ export default function HighDemandProperties({ activeTab }) {
     },
     [dispatch, navigation]
   );
-
   const handlePropertiesLists = useCallback(() => {
     navigation.navigate("PropertyList", { activeTab });
   }, [navigation, activeTab]);
-
   const renderPropertyCard = useCallback(
     ({ item }) => {
       if (!item || !item.unique_property_id) {
         return null;
       }
-
       return <PropertyCard item={item} onPress={() => handleNavigate(item)} />;
     },
     [handleNavigate]
   );
-
   const handleScroll = (event) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     if (offsetY > 100 && !showScrollToTop) {
@@ -250,12 +229,10 @@ export default function HighDemandProperties({ activeTab }) {
       setShowScrollToTop(false);
     }
   };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchProperties(true);
   };
-
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -327,7 +304,6 @@ export default function HighDemandProperties({ activeTab }) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   highlightedContainer: {
     width: 300,
@@ -335,9 +311,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 15,
     marginVertical: 10,
-
     borderColor: "#E0E0E0",
-
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -355,7 +329,6 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 20,
   },
-
   actionButtons: {
     position: "absolute",
     top: 10,
@@ -405,7 +378,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-
   propertyNameOverlay: {
     position: "absolute",
     bottom: 100,
@@ -417,7 +389,6 @@ const styles = StyleSheet.create({
   propertyNameText: {
     color: "#fff",
     fontSize: 16,
-
     textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
@@ -426,7 +397,6 @@ const styles = StyleSheet.create({
   propertyPriceOverlay: {
     color: "#fff",
     fontSize: 14,
-
     textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,

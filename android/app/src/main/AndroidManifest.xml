@@ -36,10 +36,9 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="Meetowner"/>
+        <data android:scheme="meetowner"/>
         <data android:scheme="com.meetowner.app"/>
         <data android:scheme="exp+meetowner"/>
-        <data android:scheme="meetowner"/>
       </intent-filter>
       <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>

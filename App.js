@@ -9,6 +9,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import registerNNPushToken from "native-notify";
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -17,6 +18,7 @@ Notifications.setNotificationHandler({
   }),
 });
 export default function App() {
+  registerNNPushToken(29649, "F0aj4ZbKXb1zufIIuKYdj3");
   const [expoPushToken, setExpoPushToken] = useState("");
   const [notification, setNotification] = useState(undefined);
   const notificationListener = useRef();
@@ -64,6 +66,7 @@ export default function App() {
 function AppContent({ expoPushToken, setNotification }) {
   const dispatch = useDispatch();
   const [userData, setUserData] = useState(null);
+  console.log("userData: ", userData);
   useEffect(() => {
     const getData = async () => {
       try {

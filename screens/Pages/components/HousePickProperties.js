@@ -28,9 +28,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { Modal, TouchableWithoutFeedback } from "react-native";
 import ContactActionSheet from "./propertyDetailsComponents/ContactActionSheet";
-
 const PropertyCard = memo(({ item, onPress, onViewAll, contactNow }) => {
-  // Map item properties to the example's property object structure
   const property = {
     image: `https://api.meetowner.in/uploads/${
       item?.image || "https://placehold.co/600x400"
@@ -40,14 +38,13 @@ const PropertyCard = memo(({ item, onPress, onViewAll, contactNow }) => {
       ? formatToIndianCurrency(item?.property_cost)
       : "N/A",
     location: item?.google_address || "N/A",
-    area: item?.area || "N/A", // Adjust if your API uses a different field, e.g., item.plot_area
-    facing: item?.facing || "N/A", // Adjust if your API uses a different field, e.g., item.direction
+    area: item?.area || "N/A",
+    facing: item?.facing || "N/A",
     forSale: item?.property_for === "Sell",
     bedrooms: item?.bedrooms || "N/A",
     bathrooms: item?.bathrooms || "N/A",
     car_parking: item?.car_parking || "N/A",
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.cardContainer}>
@@ -67,7 +64,6 @@ const PropertyCard = memo(({ item, onPress, onViewAll, contactNow }) => {
                 <Ionicons name="play" size={24} color="#000" />
               </TouchableOpacity>
             </View>
-
             <View style={styles.contentContainer}>
               <View style={styles.topRow}>
                 <Text style={styles.developerName} numberOfLines={1}>
@@ -85,7 +81,6 @@ const PropertyCard = memo(({ item, onPress, onViewAll, contactNow }) => {
               </View>
             </View>
           </TouchableOpacity>
-
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.viewAllButton}
@@ -93,7 +88,6 @@ const PropertyCard = memo(({ item, onPress, onViewAll, contactNow }) => {
             >
               <Text style={styles.viewAllText}>View All Projects</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.contactButton}
               onPress={() => {
@@ -116,7 +110,6 @@ const formatToIndianCurrency = (value) => {
   if (numValue >= 1000) return (numValue / 1000).toFixed(2) + " K";
   return numValue.toString();
 };
-
 export default function HousePickProperties({ activeTab }) {
   const intrests = useSelector((state) => state.property.intrestedProperties);
   const dispatch = useDispatch();
@@ -131,9 +124,7 @@ export default function HousePickProperties({ activeTab }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [type, setType] = useState("");
-
   const [userInfo, setUserInfo] = useState("");
-
   const fetchProperties = useCallback(
     async (reset = true) => {
       setLoading(true);
@@ -142,7 +133,6 @@ export default function HousePickProperties({ activeTab }) {
           "https://api.meetowner.in/listings/v1/getBestMeetowner"
         );
         const data = await response.json();
-
         if (data.results && data.results.length > 0) {
           const newProperties = reset
             ? data.results
@@ -158,7 +148,6 @@ export default function HousePickProperties({ activeTab }) {
     },
     [activeTab, properties]
   );
-
   useEffect(() => {
     const getData = async () => {
       const data = await AsyncStorage.getItem("userdetails");
@@ -168,25 +157,21 @@ export default function HousePickProperties({ activeTab }) {
     getData();
     fetchProperties(true);
   }, []);
-
   useEffect(() => {
     const interval = setInterval(() => {
       fetchProperties(true);
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
   const contactNow = (item) => {
-    setSelectedItem(item); // Store the selected item
-    setSelectedPropertyId(item); // Update selectedPropertyId
-    setModalVisible(true); // Open the ContactActionSheet
+    setSelectedItem(item);
+    setSelectedPropertyId(item);
+    setModalVisible(true);
   };
-
   const handleSubmit = (formData) => {
-    setModalVisible(false); // Close the ContactActionSheet
-    setSelectedItem(null); // Clear the selected item
+    setModalVisible(false);
+    setSelectedItem(null);
   };
-
   const handleNavigate = useCallback(
     (item) => {
       dispatch(setPropertyDetails(item));
@@ -194,11 +179,9 @@ export default function HousePickProperties({ activeTab }) {
     },
     [dispatch, navigation]
   );
-
   const handlePropertiesLists = useCallback(() => {
     navigation.navigate("PropertyList", { activeTab });
   }, [navigation, activeTab]);
-
   const renderPropertyCard = useCallback(
     ({ item }) => {
       if (!item || !item.unique_property_id) {
@@ -215,7 +198,6 @@ export default function HousePickProperties({ activeTab }) {
     },
     [handleNavigate, handlePropertiesLists, contactNow]
   );
-
   const handleScroll = (event) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     if (offsetY > 100 && !showScrollToTop) {
@@ -224,12 +206,10 @@ export default function HousePickProperties({ activeTab }) {
       setShowScrollToTop(false);
     }
   };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchProperties(true);
   };
-
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -253,6 +233,7 @@ export default function HousePickProperties({ activeTab }) {
           scrollEventThrottle={16}
           nestedScrollEnabled={true}
           initialNumToRender={4}
+          contentContainerStyle={styles.flatListContent}
           windowSize={10}
           maxToRenderPerBatch={4}
           updateCellsBatchingPeriod={50}
@@ -270,7 +251,6 @@ export default function HousePickProperties({ activeTab }) {
           }
         />
       </View>
-
       <ContactActionSheet
         isOpen={modalVisible}
         onClose={() => {
@@ -286,24 +266,28 @@ export default function HousePickProperties({ activeTab }) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     marginVertical: 10,
     paddingHorizontal: 10,
+    backgroundColor: "#fff",
+  },
+  flatListContent: {
+    paddingHorizontal: 5,
   },
   cardContainer: {
-    width: "100%",
+    width: 350,
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: "#fff",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 6,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 1,
   },
   card: {
     width: "100%",
@@ -382,7 +366,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   viewAllText: {
-    color: "#1D3A76", // Change color as needed
+    color: "#1D3A76",
     textDecorationLine: "underline",
     fontSize: 14,
     textDecorationColor: "#1D3A76",

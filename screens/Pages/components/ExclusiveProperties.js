@@ -17,6 +17,7 @@ import {
   useDisclose,
   Box,
   Toast,
+  HStack,
 } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -32,7 +33,15 @@ import axios from "axios";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { Modal, TouchableWithoutFeedback } from "react-native";
 const PropertyCard = memo(
-  ({ item, onPress, onFav, onShare, intrestedProperties, enquireNow, isHighlighted = false }) => {
+  ({
+    item,
+    onPress,
+    onFav,
+    onShare,
+    intrestedProperties,
+    enquireNow,
+    isHighlighted = false,
+  }) => {
     const isInitiallyInterested = (intrestedProperties || [])?.some(
       (prop) =>
         prop?.property_details?.unique_property_id === item?.unique_property_id
@@ -43,9 +52,13 @@ const PropertyCard = memo(
       setIsLiked((prev) => !prev);
     };
     const property = {
-      image: `https://api.meetowner.in/uploads/${item?.image || "https://placehold.co/600x400"}`,
+      image: `https://api.meetowner.in/uploads/${
+        item?.image || "https://placehold.co/600x400"
+      }`,
       title: item?.property_name || "N/A",
-      price: item?.property_cost ? formatToIndianCurrency(item?.property_cost) : "N/A",
+      price: item?.property_cost
+        ? formatToIndianCurrency(item?.property_cost)
+        : "N/A",
       location: item?.google_address || "N/A",
       area: item?.area || "N/A",
       facing: item?.facing || "N/A",
@@ -60,7 +73,11 @@ const PropertyCard = memo(
         onPress={() => onPress && onPress(item)}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: property.image }} style={styles.ownerImage}  alt="property"/>
+          <Image
+            source={{ uri: property.image }}
+            style={styles.ownerImage}
+            alt="property"
+          />
         </View>
         <Text style={styles.ownerTitle} numberOfLines={1}>
           {property.title}
@@ -88,29 +105,29 @@ export default function ExclusiveProperties({ activeTab }) {
   const [selectedPropertyId, setSelectedPropertyId] = useState(null);
   const [type, setType] = useState("");
   const [userInfo, setUserInfo] = useState("");
-   const fetchProperties = useCallback(
-        async (reset = true) => {
-          setLoading(true);
-          try {
-            const response = await fetch(
-              "https://api.meetowner.in/listings/v1/getMeetOwnerExclusive"
-            );
-            const data = await response.json();
-            if (data.results && data.results.length > 0) {
-              const newProperties = reset
-                ? data.results
-                : [...properties, ...data.results];
-              setProperties(newProperties);
-            } 
-          } catch (error) {
-            console.error("Error fetching properties:", error);
-          } finally {
-            setLoading(false);
-            if (reset) setRefreshing(false);
-          }
-        },
-        [activeTab, properties]
-      );
+  const fetchProperties = useCallback(
+    async (reset = true) => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          "https://api.meetowner.in/listings/v1/getMeetOwnerExclusive"
+        );
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          const newProperties = reset
+            ? data.results
+            : [...properties, ...data.results];
+          setProperties(newProperties);
+        }
+      } catch (error) {
+        console.error("Error fetching properties:", error);
+      } finally {
+        setLoading(false);
+        if (reset) setRefreshing(false);
+      }
+    },
+    [activeTab, properties]
+  );
   useEffect(() => {
     const getData = async () => {
       const data = await AsyncStorage.getItem("userdetails");
@@ -121,14 +138,16 @@ export default function ExclusiveProperties({ activeTab }) {
     fetchProperties(true);
   }, []);
   useEffect(() => {
-    const interval = setInterval(() => {
-    }, 2 * 60 * 1000);
+    const interval = setInterval(() => {}, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-  const handleNavigate = useCallback((item) => {
-    dispatch(setPropertyDetails(item));
-    navigation.navigate("PropertyDetails");
-  }, [dispatch, navigation]);
+  const handleNavigate = useCallback(
+    (item) => {
+      dispatch(setPropertyDetails(item));
+      navigation.navigate("PropertyDetails");
+    },
+    [dispatch, navigation]
+  );
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchProperties(true);
@@ -141,7 +160,11 @@ export default function ExclusiveProperties({ activeTab }) {
       }
     >
       <View style={styles.container}>
-        {}
+        <HStack py={2} justifyContent={"space-between"}>
+          <NBText fontSize={20} fontFamily={"PoppinsSemiBold"}>
+            MeetOwner Exclusive
+          </NBText>
+        </HStack>
         {loading ? (
           <NBText textAlign={"center"}>Loading...</NBText>
         ) : properties.length === 0 ? (
@@ -198,7 +221,7 @@ export default function ExclusiveProperties({ activeTab }) {
 const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -246,6 +269,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginTop: 5,
     color: "#000",
-    fontFamily: 'PoppinsBold',
+    fontFamily: "PoppinsBold",
   },
 });

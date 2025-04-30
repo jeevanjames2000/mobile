@@ -235,15 +235,12 @@ export default function PropertyDetails({ navigation }) {
     }
   };
   const getOwnerDetails = async (property) => {
-    console.log("selectedPropertyId: ", property);
     const response = await fetch(
       `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property?.unique_property_id}`
     );
     const data = await response.json();
     const propertydata = data.property_details;
-    console.log("propertydata: ", propertydata);
     const sellerdata = propertydata.seller_details;
-    console.log("sellerdata: ", sellerdata);
     if (response.status === 200) {
       setOwner(sellerdata);
     }
@@ -253,7 +250,7 @@ export default function PropertyDetails({ navigation }) {
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
-      recipient: { name: userInfo?.name, phone: `91${userInfo?.mobile}` },
+      recipient: { name: owner?.name, phone: `91${owner?.mobile}` },
       whatsapp: {
         type: "template",
         template: {
@@ -317,12 +314,9 @@ export default function PropertyDetails({ navigation }) {
   const handleWhatsappChat = useCallback(
     async (property) => {
       try {
-        let ownerData = owner;
-        if (!ownerData) {
-          ownerData = await getOwnerDetails(property);
-        }
-        const ownerPhone = userInfo?.mobile;
-        if (!ownerPhone) {
+        await getOwnerDetails(property);
+        const ownerPhone = owner?.mobile;
+        if (!owner) {
           Toast.show({
             placement: "top-right",
             render: () => (
@@ -338,7 +332,7 @@ export default function PropertyDetails({ navigation }) {
             ? "https://play.google.com/store/apps/details?id=com.whatsapp"
             : "https://apps.apple.com/us/app/whatsapp-messenger/id310633997";
         const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
-        const ownerName = userInfo?.name || "Owner";
+        const ownerName = owner?.name || "Owner";
         const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
         const encodedMessage = encodeURIComponent(message);
         const normalizedPhone = ownerPhone.startsWith("+")

@@ -28,9 +28,15 @@ import { FilterOption } from "../SearchBarComponents/FilterOption";
 import debounce from "lodash/debounce";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch, useSelector } from "react-redux";
-import { setBHK, setOccupancy, setPropertyIn, setSearchData, setSubType,setLocation,setPrice } from "../../../../store/slices/searchSlice";
-
-
+import {
+  setBHK,
+  setOccupancy,
+  setPropertyIn,
+  setSearchData,
+  setSubType,
+  setLocation,
+  setPrice,
+} from "../../../../store/slices/searchSlice";
 const mapTabToPropertyFor = (tab) => {
   const mapping = {
     Buy: "Sell",
@@ -40,7 +46,6 @@ const mapTabToPropertyFor = (tab) => {
   };
   return mapping[tab] || "Sell";
 };
-
 const SearchBarProperty = ({
   searchQuery,
   setSearchQuery,
@@ -48,40 +53,67 @@ const SearchBarProperty = ({
   fetchProperties,
   filters,
   setFilters,
-  selectedCity = "Hyderabad",
+  selectedCity = "",
 }) => {
-  const { isOpen: isFilterOpen, onOpen: onOpenFilter, onClose: onCloseFilter } = useDisclose();
-  const { isOpen: isSortOpen, onOpen: onOpenSort, onClose: onCloseSort } = useDisclose();
+  const {
+    isOpen: isFilterOpen,
+    onOpen: onOpenFilter,
+    onClose: onCloseFilter,
+  } = useDisclose();
+  const {
+    isOpen: isSortOpen,
+    onOpen: onOpenSort,
+    onClose: onCloseSort,
+  } = useDisclose();
   const dispatch = useDispatch();
-  const { tab, property_in, sub_type, bhk, occupancy, location, price } = useSelector(
-    (state) => state.search
-  );
-  const [localSearchQuery, setLocalSearchQuery] = useState(location || searchQuery || "");
+  const {
+    tab,
+    property_in,
+    property_for,
+    sub_type,
+    bhk,
+    occupancy,
+    location,
+    price,
+  } = useSelector((state) => state.search);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery || "");
   const [suggestions, setSuggestions] = useState([]);
   const [recentSuggestions, setRecentSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
   const MAX_CACHE_SIZE = 5;
-
-  const [selectedPropertyType, setSelectedPropertyType] = useState(tab || "Buy");
+  const [selectedPropertyType, setSelectedPropertyType] = useState(
+    property_for || "Buy"
+  );
   const [selectedBuildingType, setSelectedBuildingType] = useState(
-    property_in || filters.property_in || (tab === "Commercial" ? "Commercial" : tab === "Plot" ? "" : "Residential")
+    property_in ||
+      filters.property_in ||
+      (tab === "Commercial"
+        ? "Commercial"
+        : tab === "Plot"
+        ? ""
+        : "Residential")
   );
   const [selectedSubPropertyType, setSelectedSubPropertyType] = useState(
-    sub_type || filters.sub_type || (tab === "Plot" ? "Plot" : tab === "Commercial" ? "Office" : "Apartment")
+    sub_type ||
+      filters.sub_type ||
+      (tab === "Plot" ? "Plot" : tab === "Commercial" ? "Office" : "Apartment")
   );
-  const [selectedBedrooms, setSelectedBedrooms] = useState(bhk || filters.bedrooms || "");
-  const [selectedPossession, setSelectedPossession] = useState(occupancy || filters.occupancy || "");
-  const [selectedSort, setSelectedSort] = useState(price || filters.priceFilter || "Relevance");
-
+  const [selectedBedrooms, setSelectedBedrooms] = useState(
+    bhk || filters.bedrooms || ""
+  );
+  const [selectedPossession, setSelectedPossession] = useState(
+    occupancy || filters.occupancy || ""
+  );
+  const [selectedSort, setSelectedSort] = useState(
+    price || filters.priceFilter || "Relevance"
+  );
   const sortOptions = [
     "Relevance",
     "Price: Low to High",
     "Price: High to Low",
     "Newest First",
   ];
-
-  // Define property types
   const residentialPropertyTypes = [
     "Apartment",
     "Independent Villa",
@@ -98,40 +130,61 @@ const SearchBarProperty = ({
     "Plot",
     "Others",
   ];
-
-  // Determine which property types to show
   const propertyTypes =
     selectedBuildingType === "Commercial" || tab === "Commercial"
       ? commercialPropertyTypes
       : residentialPropertyTypes;
-
-  // Determine possession statuses
   const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
   const possessionStatuses = isPlotOrLand
     ? ["Immediate", "Future"]
     : ["Ready to Move", "Under Construction"];
-
   useEffect(() => {
     setLocalSearchQuery(location || searchQuery || "");
     setSelectedPropertyType(tab || "Buy");
     setSelectedBuildingType(
-      property_in || filters.property_in || (tab === "Commercial" ? "Commercial" : tab === "Plot" ? "" : "Residential")
+      property_in ||
+        filters.property_in ||
+        (tab === "Commercial"
+          ? "Commercial"
+          : tab === "Plot"
+          ? ""
+          : "Residential")
     );
     setSelectedSubPropertyType(
-      sub_type || filters.sub_type || (tab === "Plot" ? "Plot" : tab === "Commercial" ? "Office" : "Apartment")
+      sub_type ||
+        filters.sub_type ||
+        (tab === "Plot"
+          ? "Plot"
+          : tab === "Commercial"
+          ? "Office"
+          : "Apartment")
     );
     setSelectedBedrooms(bhk || filters.bedrooms || "");
     setSelectedPossession(occupancy || filters.occupancy || "");
     setSelectedSort(price || filters.priceFilter || "Relevance");
-    if (["Plot", "Land", "Others"].includes(sub_type) || property_in === "Commercial") {
+    if (
+      ["Plot", "Land", "Others"].includes(sub_type) ||
+      property_in === "Commercial"
+    ) {
       setSelectedBedrooms("");
     }
-  }, [tab, property_in, sub_type, bhk, occupancy, location, price, searchQuery, filters]);
-
+  }, [
+    tab,
+    property_in,
+    sub_type,
+    bhk,
+    occupancy,
+    location,
+    price,
+    searchQuery,
+    filters,
+  ]);
   useEffect(() => {
     const loadRecentSuggestions = async () => {
       try {
-        const cachedSuggestions = await AsyncStorage.getItem("recentSuggestions");
+        const cachedSuggestions = await AsyncStorage.getItem(
+          "recentSuggestions"
+        );
         if (cachedSuggestions) {
           setRecentSuggestions(JSON.parse(cachedSuggestions));
         }
@@ -141,20 +194,21 @@ const SearchBarProperty = ({
     };
     loadRecentSuggestions();
   }, []);
-
   const saveToCache = async (newSuggestion) => {
     try {
       let updatedSuggestions = [newSuggestion, ...recentSuggestions];
       updatedSuggestions = Array.from(
         new Map(updatedSuggestions.map((item) => [item.value, item])).values()
       ).slice(0, MAX_CACHE_SIZE);
-      await AsyncStorage.setItem("recentSuggestions", JSON.stringify(updatedSuggestions));
+      await AsyncStorage.setItem(
+        "recentSuggestions",
+        JSON.stringify(updatedSuggestions)
+      );
       setRecentSuggestions(updatedSuggestions);
     } catch (error) {
       console.error("Error saving to cache:", error);
     }
   };
-
   const fetchSuggestions = async (city, query) => {
     if (!query || query.length < 3 || !city) {
       setSuggestions(recentSuggestions);
@@ -176,7 +230,10 @@ const SearchBarProperty = ({
       const uniqueSuggestions = [
         ...recentSuggestions,
         ...formattedSuggestions.filter(
-          (suggestion) => !recentSuggestions.some((recent) => recent.value === suggestion.value)
+          (suggestion) =>
+            !recentSuggestions.some(
+              (recent) => recent.value === suggestion.value
+            )
         ),
       ].slice(0, 10);
       setSuggestions(uniqueSuggestions);
@@ -190,12 +247,10 @@ const SearchBarProperty = ({
       setLoading(false);
     }
   };
-
   const debouncedFetchSuggestions = useCallback(
     debounce((city, query) => fetchSuggestions(city, query), 300),
     [recentSuggestions]
   );
-
   const handleSearch = useCallback(
     (query) => {
       setLocalSearchQuery(query);
@@ -209,18 +264,23 @@ const SearchBarProperty = ({
         setSuggestions(recentSuggestions);
       }
     },
-    [selectedCity, setSearchQuery, handleLocationSearch, recentSuggestions, debouncedFetchSuggestions, dispatch]
+    [
+      selectedCity,
+      setSearchQuery,
+      handleLocationSearch,
+      recentSuggestions,
+      debouncedFetchSuggestions,
+      dispatch,
+    ]
   );
-
   const handleClear = () => {
     setLocalSearchQuery("");
     setSearchQuery("");
     dispatch(setLocation(""));
     handleLocationSearch("");
     setSuggestions([]);
-    fetchProperties(true, filters, "Hyderabad");
+    fetchProperties(true, filters, "");
   };
-
   const handleSuggestionSelect = (item) => {
     setLocalSearchQuery(item.label);
     setSearchQuery(item.label);
@@ -229,7 +289,6 @@ const SearchBarProperty = ({
     setSuggestions([]);
     fetchProperties(true, filters, item.label);
   };
-
   const renderSuggestionItem = ({ item }) => (
     <TouchableOpacity
       style={styles.suggestionItem}
@@ -238,7 +297,6 @@ const SearchBarProperty = ({
       <Text style={styles.suggestionText}>{item.label}</Text>
     </TouchableOpacity>
   );
-
   const togglePropertyType = (type) => {
     setSelectedPropertyType(type);
     const payload = {
@@ -265,13 +323,11 @@ const SearchBarProperty = ({
     setSelectedPossession("");
     dispatch(setSearchData(payload));
   };
-
-
   const toggleBuildingType = (type) => {
     setSelectedBuildingType(type);
     dispatch(setPropertyIn(type));
     if (type === "Commercial") {
-      setSelectedSubPropertyType("Office"); // Default to Office
+      setSelectedSubPropertyType("Office");
       setSelectedBedrooms("");
       dispatch(setSubType("Office"));
       dispatch(setBHK(""));
@@ -282,7 +338,6 @@ const SearchBarProperty = ({
     setSelectedPossession("");
     dispatch(setOccupancy(""));
   };
-
   const toggleSubPropertyType = (type) => {
     const validResidentialSubTypes = [
       "Apartment",
@@ -304,7 +359,6 @@ const SearchBarProperty = ({
       selectedBuildingType === "Commercial" || tab === "Commercial"
         ? validCommercialSubTypes
         : validResidentialSubTypes;
-
     if (validSubTypes.includes(type)) {
       setSelectedSubPropertyType(type);
       dispatch(setSubType(type));
@@ -314,12 +368,10 @@ const SearchBarProperty = ({
       }
     }
   };
-
   const toggleBedroom = (type) => {
     setSelectedBedrooms(type);
     dispatch(setBHK(type));
   };
-
   const togglePossession = (type) => {
     const validPossessionStatuses = isPlotOrLand
       ? ["Immediate", "Future"]
@@ -329,7 +381,6 @@ const SearchBarProperty = ({
       dispatch(setOccupancy(type));
     }
   };
-
   const applyFilters = () => {
     const updatedFilters = {
       ...filters,
@@ -339,28 +390,32 @@ const SearchBarProperty = ({
       bedrooms: selectedBedrooms,
       occupancy: selectedPossession,
       priceFilter: selectedSort,
-      search: localSearchQuery.trim() || "Hyderabad",
+      search: localSearchQuery.trim() || "",
       property_status: 1,
     };
     setFilters(updatedFilters);
-    dispatch(setSearchData({
-      tab: selectedPropertyType,
-      property_for: mapTabToPropertyFor(selectedPropertyType),
-      property_in: selectedBuildingType,
-      sub_type: selectedSubPropertyType,
-      bhk: selectedBedrooms,
-      occupancy: selectedPossession,
-      price: selectedSort,
-      location: localSearchQuery.trim() || "Hyderabad",
-    }));
-    if (["Plot", "Land", "Others"].includes(selectedSubPropertyType) || selectedBuildingType === "Commercial") {
+    dispatch(
+      setSearchData({
+        tab: selectedPropertyType,
+        property_for: mapTabToPropertyFor(selectedPropertyType),
+        property_in: selectedBuildingType,
+        sub_type: selectedSubPropertyType,
+        bhk: selectedBedrooms,
+        occupancy: selectedPossession,
+        price: selectedSort,
+        location: localSearchQuery.trim() || "",
+      })
+    );
+    if (
+      ["Plot", "Land", "Others"].includes(selectedSubPropertyType) ||
+      selectedBuildingType === "Commercial"
+    ) {
       dispatch(setBHK(""));
       updatedFilters.bedrooms = "";
     }
-    fetchProperties(true, updatedFilters, localSearchQuery.trim() || "Hyderabad");
+    fetchProperties(true, updatedFilters, localSearchQuery.trim() || "");
     onCloseFilter();
   };
-
   const clearAllFilters = () => {
     const defaultPropertyType = "Buy";
     const defaultBuildingType = "Residential";
@@ -383,41 +438,40 @@ const SearchBarProperty = ({
       property_status: 1,
     };
     setFilters(defaultFilters);
-    dispatch(setSearchData({
-      tab: defaultPropertyType,
-      property_for: mapTabToPropertyFor(defaultPropertyType),
-      property_in: defaultBuildingType,
-      sub_type: defaultSubType,
-      bhk: "",
-      occupancy: "",
-      price: "Relevance",
-      location: "",
-    }));
-    fetchProperties(true, defaultFilters, "Hyderabad");
+    dispatch(
+      setSearchData({
+        tab: defaultPropertyType,
+        property_for: mapTabToPropertyFor(defaultPropertyType),
+        property_in: defaultBuildingType,
+        sub_type: defaultSubType,
+        bhk: "",
+        occupancy: "",
+        price: "Relevance",
+        location: "",
+      })
+    );
+    fetchProperties(true, defaultFilters, "");
     onCloseFilter();
-
-     Toast.show({
-          duration: 1000,
-          placement: "top-right",
-          render: () => {
-            return (
-              <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-                Filters cleared
-              </Box>
-            );
-          },
-        });
+    Toast.show({
+      duration: 1000,
+      placement: "top-right",
+      render: () => {
+        return (
+          <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            Filters cleared
+          </Box>
+        );
+      },
+    });
   };
-
   const handleSortSelect = (sortOption) => {
     setSelectedSort(sortOption);
     const updatedFilters = { ...filters, priceFilter: sortOption };
     setFilters(updatedFilters);
     dispatch(setPrice(sortOption));
-    fetchProperties(true, updatedFilters, localSearchQuery.trim() || "Hyderabad");
+    fetchProperties(true, updatedFilters, localSearchQuery.trim() || "");
     onCloseSort();
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.searchWrapper}>
@@ -478,11 +532,11 @@ const SearchBarProperty = ({
       </View>
       <View style={styles.sortWrapper}>
         <TouchableOpacity style={styles.sortContainer} onPress={onOpenSort}>
-          <HStack alignItems="center">
+          <HStack alignItems="center" justifyContent={"center"}>
             <Text style={styles.sortText}>Sort by</Text>
             <Image
               source={SortIcon}
-              style={{ width: 10, height: 10, tintColor: "#000", marginTop: 3 }}
+              style={{ width: 10, height: 10, tintColor: "#000" }}
               resizeMode="contain"
               alt="sortIcon"
             />
@@ -501,21 +555,21 @@ const SearchBarProperty = ({
           >
             <VStack width="100%" p={1}>
               <Text style={styles.filterText}>Filters</Text>
-               <FilterSection title="Looking For">
-                        <View style={styles.filterOptionsRow}>
-                          <FilterOption
-                            label="Buy"
-                            selected={selectedPropertyType === "Buy"}
-                            onPress={() => togglePropertyType("Buy")}
-                            checkmark={true}
-                          />
-                          <FilterOption
-                            label="Rent"
-                            selected={selectedPropertyType === "Rent"}
-                            onPress={() => togglePropertyType("Rent")}
-                            checkmark={true}
-                          />
-                        </View>
+              <FilterSection title="Looking For">
+                <View style={styles.filterOptionsRow}>
+                  <FilterOption
+                    label="Buy"
+                    selected={selectedPropertyType === "Buy"}
+                    onPress={() => togglePropertyType("Buy")}
+                    checkmark={true}
+                  />
+                  <FilterOption
+                    label="Rent"
+                    selected={selectedPropertyType === "Rent"}
+                    onPress={() => togglePropertyType("Rent")}
+                    checkmark={true}
+                  />
+                </View>
               </FilterSection>
               <FilterSection title="Building Type">
                 <View style={styles.filterOptionsRow}>
@@ -561,14 +615,16 @@ const SearchBarProperty = ({
                       ))}
                     </View>
                     <View style={styles.filterOptionsRow}>
-                      {["4 BHK", "5 BHK", "6 BHK", "7 BHK", "8 BHK"].map((bhk) => (
-                        <FilterOption
-                          key={bhk}
-                          label={bhk}
-                          selected={selectedBedrooms === bhk}
-                          onPress={() => toggleBedroom(bhk)}
-                        />
-                      ))}
+                      {["4 BHK", "5 BHK", "6 BHK", "7 BHK", "8 BHK"].map(
+                        (bhk) => (
+                          <FilterOption
+                            key={bhk}
+                            label={bhk}
+                            selected={selectedBedrooms === bhk}
+                            onPress={() => toggleBedroom(bhk)}
+                          />
+                        )
+                      )}
                     </View>
                   </FilterSection>
                 )}
@@ -628,8 +684,6 @@ const SearchBarProperty = ({
     </View>
   );
 };
-
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -689,7 +743,7 @@ const styles = StyleSheet.create({
   sortContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 30,
-    paddingVertical: 15,
+    paddingVertical: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

@@ -75,7 +75,7 @@ const ShareDetailsModal = ({
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
-      recipient: { name: userInfo?.name, phone: `91${userInfo?.mobile}` },
+      recipient: { name: owner?.name, phone: `91${owner?.mobile}` },
       whatsapp: {
         type: "template",
         template: {

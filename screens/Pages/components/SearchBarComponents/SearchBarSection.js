@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   StyleSheet,
   TouchableOpacity,
@@ -11,9 +17,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { debounce } from "lodash";
 import LocationImage from "../../../../assets/location_icon.png";
-export default function SearchBarSection({ selectedCity, setSearchQuery, setLocation }) {
+import { useDispatch, useSelector } from "react-redux";
+import { setLocation } from "../../../../store/slices/searchSlice";
+export default function SearchBarSection() {
+  const searchData = useSelector((state) => state.search);
   const navigation = useNavigation();
   const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
@@ -48,23 +58,24 @@ export default function SearchBarSection({ selectedCity, setSearchQuery, setLoca
     }, 300),
     []
   );
+  const dispatch = useDispatch();
   const handleSearch = useMemo(
     () => (query) => {
+      dispatch(setLocation(query));
       setLocalSearchQuery(query);
       setSearchQuery(query);
-      setLocation(query);
-      if (query.trim().length >= 3 && selectedCity?.label) {
-        debouncedFetchSuggestions(selectedCity.label, query);
+      if (query.trim().length >= 3) {
+        debouncedFetchSuggestions(searchData.city, query);
       } else {
         setSuggestions([]);
       }
     },
-    [selectedCity, setSearchQuery, setLocation]
+    [localSearchQuery, searchQuery, setLocalSearchQuery]
   );
   const handleClear = () => {
     setLocalSearchQuery("");
     setSearchQuery("");
-    setLocation("");
+    dispatch(setLocation(""));
     setSuggestions([]);
   };
   const renderSuggestionItem = ({ item }) => (
@@ -73,7 +84,7 @@ export default function SearchBarSection({ selectedCity, setSearchQuery, setLoca
       onPress={() => {
         setLocalSearchQuery(item.label);
         setSearchQuery(item.label);
-        setLocation(item.label);
+        dispatch(setLocation(item.label));
         setSuggestions([]);
       }}
     >
@@ -100,7 +111,11 @@ export default function SearchBarSection({ selectedCity, setSearchQuery, setLoca
           style={styles.iconButton}
           onPress={() => navigation.navigate("SearchBox")}
         >
-          <Image source={LocationImage} style={{ width: 30, height: 30 }} alt="location" />
+          <Image
+            source={LocationImage}
+            style={{ width: 30, height: 30 }}
+            alt="location"
+          />
         </TouchableOpacity>
       </View>
       {loading ? (
@@ -165,9 +180,10 @@ const styles = StyleSheet.create({
   },
   suggestionsList: {
     position: "absolute",
-    top: 60,
+    top: 65,
     left: 10,
     right: 10,
+    width: "100%",
     backgroundColor: "white",
     maxHeight: 200,
     borderRadius: 8,

@@ -5,20 +5,20 @@ import { StyleSheet } from "react-native";
 const LatestPropertiesWrapper = ({ activeTab, selectedCity }) => {
   return (
     <FlatList
-    data={[{ key: "properties" }]}
+      data={[{ key: "properties" }]}
       keyExtractor={(item) => item.key}
       renderItem={() => (
         <LatestProperties activeTab={activeTab} selectedCity={selectedCity} />
       )}
       showsVerticalScrollIndicator={false}
-        vertical={false}
+      vertical={false}
       contentContainerStyle={styles.flatListContainer}
     />
   );
 };
 const styles = StyleSheet.create({
   flatListContainer: {
-    backgroundColor: "# CLOSED",
+    backgroundColor: "#fff",
   },
 });
 export default LatestPropertiesWrapper;

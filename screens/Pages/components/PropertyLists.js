@@ -11,6 +11,7 @@ import {
   VStack,
   Box,
   Toast,
+  StatusBar,
 } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -23,7 +24,6 @@ import config from "../../../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import {
-  BackHandler,
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
@@ -38,6 +38,8 @@ import SearchBarProperty from "./propertyDetailsComponents/SearchBarProperty";
 import FilterBar from "./propertyDetailsComponents/FilterBar";
 import PropertyImage from "./propertyDetailsComponents/PropertyImage";
 import ShareDetailsModal from "./ShareDetailsModal";
+import { setLocation } from "../../../store/slices/searchSlice";
+import { debounce } from "lodash";
 const userTypeMap = {
   3: "Builder",
   4: "Agent",
@@ -73,11 +75,24 @@ const PropertyCard = memo(
       onFav(item, !isLiked);
       setIsLiked((prev) => !prev);
     };
+    const [imageError, setImageError] = useState(false);
+    const placeholderImage = "https://placehold.co/600x400";
+    const imageUri =
+      item?.image && item.image.trim() !== "" && !imageError
+        ? `https://api.meetowner.in/uploads/${item.image}`
+        : placeholderImage;
     return (
       <View style={styles.containerVstack}>
         <Pressable onPress={() => onNavigate(item)}>
           <VStack alignItems="flex-start">
-            <PropertyImage item={item} />
+            <Image
+              source={{ uri: imageUri }}
+              alt={`Image of ${item?.property_name || "Property"}`}
+              w={400}
+              h={200}
+              resizeMode="cover"
+              onError={() => setImageError(true)}
+            />
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={styles.iconButton}
@@ -177,9 +192,17 @@ const PropertyCard = memo(
                   ₹ {formatToIndianCurrency(item.property_cost || 0)}
                 </Text>
               </HStack>
-              <Text style={styles.propertyText}>
-                {item.property_in || "N/A"} | {item.sub_type || "N/A"}
-              </Text>
+              {item.sub_type === "Apartment" ||
+              item.sub_type === "Independent House" ? (
+                <Text style={styles.propertyText}>
+                  {item.property_in || "N/A"} | {item.bedrooms} BHK{" "}
+                  {item.sub_type || "N/A"} For {item.property_for}
+                </Text>
+              ) : (
+                <Text style={styles.propertyText}>
+                  {item.property_in || "N/A"} | {item.sub_type || "N/A"}
+                </Text>
+              )}
             </VStack>
           </VStack>
         </Pressable>
@@ -256,9 +279,6 @@ export default function PropertyLists({ route }) {
   const intrestedProperties = useSelector(
     (state) => state.property.intrestedProperties
   );
-  const { prevSearch } = route.params || {};
-  const [propertyLoading, setPropertyLoading] = useState(false);
-  const maxLimit = 50;
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const flatListRef = useRef(null);
@@ -270,101 +290,35 @@ export default function PropertyLists({ route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState(prevSearch || "");
+  const {
+    tab,
+    property_in,
+    property_for,
+    sub_type,
+    bhk,
+    occupancy,
+    location,
+    price,
+    city,
+  } = useSelector((state) => state.search);
+  const [searchQuery, setSearchQuery] = useState(location || "");
   const [userDetails, setUserDetails] = useState(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const locationCacheRef = useRef({});
-  const prefetchedUrlsRef = useRef(new Set());
   const [userInfo, setUserInfo] = useState("");
-  const { tab, property_in, sub_type, bhk, occupancy, location, price } =
-    useSelector((state) => state.search);
   const [filters, setFilters] = useState({
-    property_for: mapTabToPropertyFor(tab) || "Sell",
+    property_for: property_for || "Sell",
     property_in: property_in || "Residential",
     sub_type: sub_type || "Apartment",
-    search: location || prevSearch || "",
+    search: location || "",
     bedrooms: bhk || "",
     property_cost: "",
     priceFilter: price || "Relevance",
     occupancy: occupancy || "",
     property_status: 1,
   });
-  useEffect(() => {
-    const updatedFilters = {
-      property_for: mapTabToPropertyFor(tab) || "Sell",
-      property_in:
-        property_in ||
-        (tab === "Commercial"
-          ? "Commercial"
-          : tab === "Plot"
-          ? ""
-          : "Residential"),
-      sub_type:
-        sub_type ||
-        (tab === "Plot" ? "Plot" : tab === "Commercial" ? "" : "Apartment"),
-      bedrooms: bhk || "",
-      occupancy: occupancy || "",
-      search: location || prevSearch || "",
-      priceFilter: price || "Relevance",
-      property_cost: "",
-      property_status: 1,
-    };
-    setFilters(updatedFilters);
-    setSearchQuery(location || prevSearch || "");
-    setPage(1);
-    setProperties([]);
-    fetchProperties(
-      true,
-      updatedFilters,
-      location || prevSearch || "Hyderabad"
-    );
-  }, [tab, property_in, sub_type, bhk, occupancy, location, price, prevSearch]);
-
-
-  const preloadImages = useCallback((nextProperties) => {
-    const prefetchedUrls = prefetchedUrlsRef.current;
-    const imageUrls = nextProperties
-      .slice(0, 4)
-      .map((item) => {
-        const imageUrl =
-          item?.image && item.image.trim() !== ""
-            ? `https://api.meetowner.in/uploads/${item.image}`
-            : null;
-        const placeholderUrl = `https://placehold.co/200x100@3x.png?text=${encodeURIComponent(
-          item?.property_name || "Property"
-        )}`;
-        return { imageUrl, placeholderUrl };
-      })
-      .filter((entry) => entry.imageUrl || entry.placeholderUrl);
-    const prefetchImages = async () => {
-      const prefetchPromises = imageUrls.map(
-        async ({ imageUrl, placeholderUrl }) => {
-          const urlToPrefetch =
-            imageUrl && !prefetchedUrls.has(imageUrl)
-              ? imageUrl
-              : placeholderUrl;
-          if (prefetchedUrls.has(urlToPrefetch)) return;
-          try {
-            await Image.prefetch(urlToPrefetch);
-            prefetchedUrls.add(urlToPrefetch);
-          } catch (err) {
-            console.warn(`Prefetch failed for ${urlToPrefetch}:`, err);
-          }
-        }
-      );
-      const concurrencyLimit = 2;
-      for (let i = 0; i < prefetchPromises.length; i += concurrencyLimit) {
-        await Promise.all(prefetchPromises.slice(i, i + concurrencyLimit));
-      }
-    };
-    prefetchImages().catch((err) =>
-      console.warn("Error in prefetchImages:", err)
-    );
-  }, []);
-
-
   const mapPriceFilterToApiValue = (priceFilter) => {
     const validFilters = [
       "Relevance",
@@ -374,35 +328,56 @@ export default function PropertyLists({ route }) {
     ];
     return validFilters.includes(priceFilter) ? priceFilter : "Relevance";
   };
-
-  
+  const debouncedFetchProperties = useCallback(
+    debounce((reset, appliedFilters) => {
+      fetchProperties(reset, appliedFilters);
+    }, 3000),
+    []
+  );
+  useEffect(() => {
+    const updatedFilters = {
+      property_for: property_for || "Sell",
+      property_in:
+        property_in ||
+        (tab === "Commercial"
+          ? "Commercial"
+          : tab === "Plot"
+          ? ""
+          : "Residential"),
+      sub_type:
+        sub_type ||
+        (tab === "Plot"
+          ? "Plot"
+          : tab === "Commercial"
+          ? "Commercial"
+          : "Apartment"),
+      bedrooms: bhk || "",
+      occupancy: occupancy || "",
+      search: location || "",
+      priceFilter: price || "Relevance",
+      property_cost: "",
+      property_status: 1,
+    };
+    setFilters(updatedFilters);
+    setSearchQuery(location || "");
+    setPage(1);
+    setProperties([]);
+    fetchProperties(true, updatedFilters);
+  }, [tab, property_in, sub_type, bhk, occupancy, location, price]);
   const fetchProperties = useCallback(
-    async (reset = false, appliedFilters = filters, searchedLocation) => {
+    async (reset = false, appliedFilters = filters) => {
       if (!hasMore && !reset) return;
       if (reset) setInitialLoading(true);
       else setPaginationLoading(true);
       setError(null);
       try {
-        const storedDetails = await AsyncStorage.getItem("userdetails");
-        if (!storedDetails) {
-          setError("User details not found. Please log in.");
-          return;
-        }
-        const parsedUserDetails = JSON.parse(storedDetails);
-        setUserDetails(parsedUserDetails);
-        const locationToSearch = (
-          searchedLocation ||
-          appliedFilters.search ||
-          "Hyderabad"
-        ).toLowerCase();
         const pageToFetch = reset ? 1 : page;
-        const cacheKey = `${locationToSearch}_${JSON.stringify(
-          appliedFilters
-        )}`;
+        const cacheKey = `${location}_${JSON.stringify(appliedFilters)}`;
         if (locationCacheRef.current[cacheKey] && !reset && pageToFetch === 1) {
           setProperties(locationCacheRef.current[cacheKey]);
           setHasMore(true);
-          preloadImages(locationCacheRef.current[cacheKey]);
+          setInitialLoading(false);
+          setPaginationLoading(false);
           return;
         }
         const queryParams = new URLSearchParams({
@@ -410,7 +385,7 @@ export default function PropertyLists({ route }) {
           property_for: appliedFilters.property_for || "Sell",
           property_in: appliedFilters.property_in || "",
           sub_type: appliedFilters.sub_type || "",
-          search: locationToSearch,
+          search: appliedFilters.search || "",
           bedrooms: appliedFilters.bedrooms
             ? appliedFilters.bedrooms.replace(" BHK", "")
             : "",
@@ -430,7 +405,6 @@ export default function PropertyLists({ route }) {
             const newProperties = reset
               ? data.properties
               : [...prev, ...data.properties];
-            preloadImages(data.properties);
             return newProperties;
           });
           setPage(pageToFetch + 1);
@@ -443,7 +417,6 @@ export default function PropertyLists({ route }) {
           setHasMore(false);
         }
       } catch (error) {
-        console.error("Error fetching properties:", error);
         setError("Failed to load properties. Please try again.");
         if (reset) setProperties([]);
         setHasMore(false);
@@ -453,7 +426,7 @@ export default function PropertyLists({ route }) {
         if (reset) setRefreshing(false);
       }
     },
-    [page, hasMore, preloadImages]
+    [page, hasMore]
   );
   useEffect(() => {
     const getData = async () => {
@@ -462,11 +435,11 @@ export default function PropertyLists({ route }) {
         if (data) {
           const parsedUserDetails = JSON.parse(data);
           setUserInfo(parsedUserDetails);
+          setUserDetails(parsedUserDetails);
           await fetchIntrestedProperties(parsedUserDetails);
         } else {
           console.warn("No user details found in AsyncStorage");
         }
-        fetchProperties(true, filters, location || prevSearch || "Hyderabad");
       } catch (error) {
         console.error("Error fetching user details:", error);
       }
@@ -479,8 +452,8 @@ export default function PropertyLists({ route }) {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
       recipient: {
-        name: userDetails?.name || "Unknown",
-        phone: `91${userDetails?.mobile}`,
+        name: owner?.name || "Unknown",
+        phone: `91${owner?.mobile}`,
       },
       whatsapp: {
         type: "template",
@@ -528,7 +501,6 @@ export default function PropertyLists({ route }) {
     }
   };
   const handleInterestAPI = async (property, isAlreadyLiked) => {
-    console.log("property: ", isAlreadyLiked);
     if (!userInfo) {
       Toast.show({
         placement: "top-right",
@@ -564,7 +536,6 @@ export default function PropertyLists({ route }) {
         ),
       });
     } catch (error) {
-      console.error("Error posting interest:", error);
       Toast.show({
         placement: "top-right",
         render: () => (
@@ -578,7 +549,6 @@ export default function PropertyLists({ route }) {
   const fetchIntrestedProperties = async (userInfo) => {
     try {
       if (!userInfo?.user_id) {
-        console.warn("User ID not found in userInfo:", userInfo);
         return;
       }
       const response = await axios.get(
@@ -587,26 +557,22 @@ export default function PropertyLists({ route }) {
       const liked = response.data.favourites || [];
       const likedIds = liked.map((fav) => fav.unique_property_id);
       dispatch(setIntrestedProperties(likedIds));
-    } catch (error) {
-      console.error("Error fetching interested properties:", error);
-    }
+    } catch (error) {}
   };
-  const getOwnerDetails = async (unique_property_id) => {
+  const getOwnerDetails = async (property) => {
     try {
       const response = await fetch(
-        `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${unique_property_id}`
+        `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property?.unique_property_id}`
       );
       if (!response.ok) throw new Error(`API error: ${response.status}`);
       const data = await response.json();
       return data.property_details?.seller_details || {};
     } catch (error) {
-      console.error("Error fetching owner details:", error);
       return {};
     }
   };
   const handleFavourites = useCallback(
     async (item, action) => {
-      console.log("action: ", action);
       try {
         await handleInterestAPI(item, action);
       } catch (error) {
@@ -660,13 +626,11 @@ export default function PropertyLists({ route }) {
   const [owner, setOwner] = useState("");
   const handleWhatsappChat = useCallback(
     async (property) => {
-      console.log("property: ", property);
       try {
-        let ownerData = owner;
-        if (!ownerData) {
-          ownerData = await getOwnerDetails(property);
-        }
-        const ownerPhone = userInfo?.mobile;
+        let ownerData = await getOwnerDetails(property);
+
+        const ownerPhone = ownerData?.mobile;
+
         if (!ownerPhone) {
           Toast.show({
             placement: "top-right",
@@ -683,7 +647,7 @@ export default function PropertyLists({ route }) {
             ? "https://play.google.com/store/apps/details?id=com.whatsapp"
             : "https://apps.apple.com/us/app/whatsapp-messenger/id310633997";
         const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
-        const ownerName = userInfo?.name || "Owner";
+        const ownerName = ownerData?.name || "Owner";
         const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
         const encodedMessage = encodeURIComponent(message);
         const normalizedPhone = ownerPhone.startsWith("+")
@@ -747,8 +711,8 @@ export default function PropertyLists({ route }) {
     setRefreshing(true);
     setPage(1);
     setProperties([]);
-    fetchProperties(true, filters, searchQuery || prevSearch || "Hyderabad");
-  }, [filters, prevSearch, fetchProperties]);
+    fetchProperties(true, filters);
+  }, [filters, fetchProperties]);
   const loadMoreProperties = useCallback(() => {
     if (!paginationLoading && hasMore) {
       fetchProperties(false);
@@ -757,117 +721,123 @@ export default function PropertyLists({ route }) {
   const handleLocationSearch = useCallback(
     (query) => {
       setSearchQuery(query);
+      dispatch(setLocation(query));
+      const updatedFilters = { ...filters, search: query };
+      setFilters(updatedFilters);
       setPage(1);
       setProperties([]);
-      fetchProperties(true, filters, query || "Hyderabad");
+      debouncedFetchProperties(true, updatedFilters);
     },
-    [filters, fetchProperties]
+    [filters, debouncedFetchProperties, dispatch]
   );
   return (
-    <View style={styles.container}>
-      <SearchBarProperty
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        handleLocationSearch={handleLocationSearch}
-        fetchProperties={fetchProperties}
-        filters={filters}
-        setFilters={setFilters}
-        selectedCity="Hyderabad"
-      />
-      <FilterBar />
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : initialLoading ? (
-        <View style={styles.loadingContainer}>
-          <Spinner size="lg" color="#1D3A76" />
-          <Text style={styles.loadingText}>Loading Properties...</Text>
-        </View>
-      ) : properties.length > 0 ? (
-        <FlatList
-          ref={flatListRef}
-          data={properties}
-          keyExtractor={(item) => item.unique_property_id}
-          renderItem={renderPropertyCard}
-          onEndReached={loadMoreProperties}
-          onEndReachedThreshold={0.7}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          initialNumToRender={10}
-          maxToRenderPerBatch={50}
-          windowSize={21}
-          updateCellsBatchingPeriod={50}
-          getItemLayout={getItemLayout}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={["#1D3A76"]}
-            />
-          }
-          ListFooterComponent={
-            paginationLoading ? (
-              <View style={styles.loaderContainer}>
-                <Spinner size="small" color="#1D3A76" />
-              </View>
-            ) : !hasMore && properties.length > 0 ? (
-              <View style={styles.footerContainer}>
-                <Text style={styles.footerText}>No More Properties</Text>
-              </View>
-            ) : null
-          }
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor={"#f5f5f5"} />
+      <View style={styles.container}>
+        <SearchBarProperty
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          handleLocationSearch={handleLocationSearch}
+          fetchProperties={fetchProperties}
+          filters={filters}
+          setFilters={setFilters}
+          selectedCity={city}
         />
-      ) : (
-        <View style={styles.noPropertiesContainer}>
-          <Text style={styles.noPropertiesText}>No properties found</Text>
-        </View>
-      )}
-      {modalVisible && (
-        <Pressable
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-          onPress={() => setModalVisible(false)}
-        >
+        <FilterBar />
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : initialLoading ? (
+          <View style={styles.loadingContainer}>
+            <Spinner size="lg" color="#1D3A76" />
+            <Text style={styles.loadingText}>Loading Properties...</Text>
+          </View>
+        ) : properties.length > 0 ? (
+          <FlatList
+            ref={flatListRef}
+            data={properties}
+            keyExtractor={(item) => item.unique_property_id}
+            renderItem={renderPropertyCard}
+            onEndReached={loadMoreProperties}
+            onEndReachedThreshold={0.7}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            initialNumToRender={10}
+            maxToRenderPerBatch={50}
+            windowSize={21}
+            updateCellsBatchingPeriod={50}
+            getItemLayout={getItemLayout}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={["#1D3A76"]}
+              />
+            }
+            ListFooterComponent={
+              paginationLoading ? (
+                <View style={styles.loaderContainer}>
+                  <Spinner size="small" color="#1D3A76" />
+                </View>
+              ) : !hasMore && properties.length > 0 ? (
+                <View style={styles.footerContainer}>
+                  <Text style={styles.footerText}>No More Properties</Text>
+                </View>
+              ) : null
+            }
+          />
+        ) : (
+          <View style={styles.noPropertiesContainer}>
+            <Text style={styles.noPropertiesText}>No properties found</Text>
+          </View>
+        )}
+        {modalVisible && (
           <Pressable
-            onPress={(e) => e.stopPropagation()}
             style={{
-              width: "90%",
-              backgroundColor: "#fff",
-              borderRadius: 10,
-              elevation: 5,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 1000,
             }}
+            onPress={() => setModalVisible(false)}
           >
-            <ShareDetailsModal
-              modalVisible={modalVisible}
-              setModalVisible={setModalVisible}
-              selectedPropertyId={selectedPropertyId}
-            />
+            <Pressable
+              onPress={(e) => e.stopPropagation()}
+              style={{
+                width: "90%",
+                backgroundColor: "#fff",
+                borderRadius: 10,
+                elevation: 5,
+              }}
+            >
+              <ShareDetailsModal
+                modalVisible={modalVisible}
+                setModalVisible={setModalVisible}
+                selectedPropertyId={selectedPropertyId}
+              />
+            </Pressable>
           </Pressable>
-        </Pressable>
-      )}
-      {showScrollToTop && (
-        <IconButton
-          position="absolute"
-          bottom={85}
-          right={5}
-          bg="white"
-          borderRadius="full"
-          shadow={3}
-          icon={<Ionicons name="arrow-up" size={24} color="#1D3A76" />}
-          onPress={scrollToTop}
-        />
-      )}
-    </View>
+        )}
+        {showScrollToTop && (
+          <IconButton
+            position="absolute"
+            bottom={10}
+            right={5}
+            bg="white"
+            borderRadius="full"
+            shadow={3}
+            icon={<Ionicons name="arrow-up" size={24} color="#1D3A76" />}
+            onPress={scrollToTop}
+          />
+        )}
+      </View>
+    </>
   );
 }
 const styles = StyleSheet.create({

@@ -5,41 +5,28 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Keyboard,
   View,
   Text,
   Image,
 } from "react-native";
-import {
-  FlatList,
-  HStack,
-  Text as NBText,
-  View as NBView,
-  Actionsheet,
-  useDisclose,
-  Box,
-  Toast,
-} from "native-base";
+import { FlatList, HStack, Text as NBText, Box, Toast } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSelector, useDispatch } from "react-redux";
 import {
   setIntrestedProperties,
-  setTrendingProjects,
   setPropertyDetails,
 } from "../../../store/slices/propertyDetails";
 import config from "../../../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import ShareDetailsModal from "./ShareDetailsModal";
-import { Modal, TouchableWithoutFeedback } from "react-native";
 import direction from "../../../assets/propertyicons/direction.png";
 import location from "../../../assets/propertyicons/location.png";
 import parking from "../../../assets/propertyicons/parking.png";
 import shower from "../../../assets/propertyicons/shower.png";
-import yards from "../../../assets/propertyicons/yards.png";
 import bhk from "../../../assets/propertyicons/bhk.png";
 import ContactActionSheet from "./propertyDetailsComponents/ContactActionSheet";
+import SkeletonLoader from "../../../utils/SkeletonLoader";
 const PropertyCard = memo(
   ({
     item,
@@ -200,6 +187,8 @@ export default function BestDealProperties({ activeTab }) {
   );
   const dispatch = useDispatch();
   const [properties, setProperties] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState(2);
+
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -230,6 +219,7 @@ export default function BestDealProperties({ activeTab }) {
         console.error("Error fetching properties:", error);
       } finally {
         setLoading(false);
+        setPendingRequests((prev) => prev - 1);
         if (reset) setRefreshing(false);
       }
     },
@@ -284,6 +274,8 @@ export default function BestDealProperties({ activeTab }) {
       dispatch(setIntrestedProperties(likedIds));
     } catch (error) {
       console.error("Error fetching interested properties:", error);
+    } finally {
+      setPendingRequests((prev) => prev - 1);
     }
   };
   useEffect(() => {
@@ -296,20 +288,28 @@ export default function BestDealProperties({ activeTab }) {
           await fetchIntrestedProperties(parsedUserDetails);
         } else {
           console.warn("No user details found in AsyncStorage");
+          setPendingRequests((prev) => prev - 1);
         }
         await fetchProperties(true);
       } catch (error) {
         console.error("Error fetching user details:", error);
+        setPendingRequests((prev) => prev - 1);
       }
     };
     getData();
   }, []);
   useEffect(() => {
+    if (pendingRequests === 0) {
+      setLoading(false);
+    }
+  }, [pendingRequests]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       fetchProperties(true);
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchProperties]);
   const shareProperty = async (property) => {
     try {
       await Share.share({
@@ -395,8 +395,10 @@ export default function BestDealProperties({ activeTab }) {
   };
   const onRefresh = async () => {
     setRefreshing(true);
+    setPendingRequests(2);
     await fetchProperties(true);
   };
+
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -404,42 +406,65 @@ export default function BestDealProperties({ activeTab }) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View style={{ flex: 1 }}>
-        <View style={{ flex: 1 }}>
-          <FlatList
-            ref={flatListRef}
-            data={properties}
-            keyExtractor={(item, index) =>
-              item?.unique_property_id
-                ? item.unique_property_id
-                : `fallback-${index}`
-            }
-            renderItem={renderPropertyCard}
-            horizontal={true}
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            nestedScrollEnabled={true}
-            initialNumToRender={4}
-            windowSize={10}
-            maxToRenderPerBatch={4}
-            updateCellsBatchingPeriod={50}
-            removeClippedSubviews={true}
-            contentContainerStyle={{ paddingHorizontal: 10 }}
-            ListEmptyComponent={() =>
-              !loading && (
-                <NBText textAlign={"center"}>No properties found.</NBText>
-              )
-            }
-            ListFooterComponent={
-              <TouchableOpacity
-                style={styles.fixedExploreButton}
-                onPress={handlePropertiesLists}
-              ></TouchableOpacity>
-            }
-          />
+      <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <View style={{ flex: 1, paddingVertical: 10 }}>
+          {loading ? (
+            <SkeletonLoader />
+          ) : (
+            <>
+              <HStack py={2} mx={2} justifyContent={"space-between"}>
+                <NBText fontSize={20} fontFamily={"PoppinsSemiBold"}>
+                  Best Deal Properties
+                </NBText>
+                <TouchableOpacity onPress={handlePropertiesLists}>
+                  <NBText
+                    fontSize={15}
+                    fontFamily={"PoppinsSemiBold"}
+                    color={"#000"}
+                  >
+                    View All
+                  </NBText>
+                </TouchableOpacity>
+              </HStack>
+              <View style={{ flex: 1 }}>
+                <FlatList
+                  ref={flatListRef}
+                  data={properties}
+                  keyExtractor={(item, index) =>
+                    item?.unique_property_id
+                      ? item.unique_property_id
+                      : `fallback-${index}`
+                  }
+                  renderItem={renderPropertyCard}
+                  horizontal={true}
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                  nestedScrollEnabled={true}
+                  initialNumToRender={4}
+                  windowSize={10}
+                  maxToRenderPerBatch={4}
+                  updateCellsBatchingPeriod={50}
+                  removeClippedSubviews={true}
+                  contentContainerStyle={{ paddingHorizontal: 10 }}
+                  ListEmptyComponent={() =>
+                    !loading && (
+                      <NBText textAlign={"center"}>No properties found.</NBText>
+                    )
+                  }
+                  ListFooterComponent={
+                    <TouchableOpacity
+                      style={styles.fixedExploreButton}
+                      onPress={handlePropertiesLists}
+                    ></TouchableOpacity>
+                  }
+                />
+              </View>
+            </>
+          )}
         </View>
       </View>
+
       <ContactActionSheet
         isOpen={modalVisible}
         onClose={() => {
@@ -452,31 +477,6 @@ export default function BestDealProperties({ activeTab }) {
         type="enquireNow"
         selectedPropertyId={selectedPropertyId}
       />
-      {/* <Modal
-        transparent={true}
-        animationType="slide"
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setModalVisible(false);
-          }}
-        >
-          <View style={styles.modalContainer}>
-            <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-              <View style={styles.modalContent}>
-                <ShareDetailsModal
-                  type={type}
-                  modalVisible={modalVisible}
-                  setModalVisible={setModalVisible}
-                  selectedPropertyId={selectedPropertyId}
-                />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal> */}
     </ScrollView>
   );
 }
@@ -492,10 +492,11 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 6,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 1,
     flexDirection: "row",
   },
   imageContainer: {

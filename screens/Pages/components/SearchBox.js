@@ -47,6 +47,8 @@ import {
   setSearchData,
   setSubType,
   setLocation,
+  setPropertyFor,
+  setCity,
 } from "../../../store/slices/searchSlice";
 import CustomHeaderFilter from "./SearchBarComponents/CustomHeaderFilter";
 
@@ -58,6 +60,7 @@ export default function SearchBox() {
     (state) => state.search,
     shallowEqual
   );
+  const searchData = useSelector((state) => state.search);
   const cities = useSelector((state) => state.property.cities, shallowEqual);
   const [locations, setLocations] = useState([]);
   const [filteredLocations, setFilteredLocations] = useState([]);
@@ -65,7 +68,10 @@ export default function SearchBox() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState(location || "");
-  const [selectedPropertyType, setSelectedPropertyType] = useState(tab || "Buy");
+  const [selectedPropertyType, setSelectedPropertyType] = useState(
+    tab || "Buy"
+  );
+
   const [selectedBuildingType, setSelectedBuildingType] = useState(
     property_in || "Residential"
   );
@@ -271,7 +277,7 @@ export default function SearchBox() {
           label: matchedCity.label,
           value: matchedCity.value,
         });
-        dispatch(setLocation(matchedCity.label));
+        dispatch(setCity(matchedCity.label));
       } else {
         setSelectedLocation(null);
       }
@@ -291,7 +297,7 @@ export default function SearchBox() {
 
   const handleCitySelect = (item) => {
     setSelectedLocation(item);
-    dispatch(setLocation(item.label));
+    dispatch(setCity(item.label));
     onClose();
     setSearchQuery("");
   };
@@ -402,7 +408,8 @@ export default function SearchBox() {
 
   // Determine which property types to show
   const propertyTypes =
-    selectedBuildingType === "Commercial" || selectedPropertyType === "Commercial"
+    selectedBuildingType === "Commercial" ||
+    selectedPropertyType === "Commercial"
       ? commercialPropertyTypes
       : residentialPropertyTypes;
 
@@ -457,27 +464,27 @@ export default function SearchBox() {
             />
           </View>
         </View>
-        <SearchBarSection
-          selectedCity={selectedLocation}
-          setSearchQuery={setSearchQuery}
-          setLocation={(loc) => dispatch(setLocation(loc))}
-        />
-         <FilterSection title="Looking For">
-          <View style={styles.filterOptionsRow}>
-            <FilterOption
-              label="Buy"
-              selected={selectedPropertyType === "Buy"}
-              onPress={() => togglePropertyType("Buy")}
-              checkmark={true}
-            />
-            <FilterOption
-              label="Rent"
-              selected={selectedPropertyType === "Rent"}
-              onPress={() => togglePropertyType("Rent")}
-              checkmark={true}
-            />
-          </View>
-        </FilterSection>
+        <SearchBarSection />
+        {(selectedPropertyType === "Plot" ||
+          selectedPropertyType === "Commercial") && (
+          <FilterSection title="Looking For">
+            <View style={styles.filterOptionsRow}>
+              <FilterOption
+                label="Buy"
+                selected={searchData.property_for === "Buy"}
+                onPress={() => dispatch(setPropertyFor("Buy"))}
+                checkmark={true}
+              />
+              <FilterOption
+                label="Rent"
+                selected={searchData.property_for === "Rent"}
+                onPress={() => dispatch(setPropertyFor("Rent"))}
+                checkmark={true}
+              />
+            </View>
+          </FilterSection>
+        )}
+
         <FilterSection title="Building Type">
           <View style={styles.filterOptionsRow}>
             <FilterOption
@@ -532,7 +539,7 @@ export default function SearchBox() {
                 ))}
               </View>
             </FilterSection>
-        )}
+          )}
         <FilterSection title="Possession Status">
           <View style={styles.filterOptionsRow}>
             {possessionStatuses.map((status) => (
@@ -597,9 +604,6 @@ export default function SearchBox() {
     </View>
   );
 }
-
-
-
 
 const styles = StyleSheet.create({
   container: {

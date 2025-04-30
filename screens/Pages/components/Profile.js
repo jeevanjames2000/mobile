@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingVertical: 12,
     paddingHorizontal: 15,
-    borderRadius: 30,
+    borderRadius: 10,
     marginTop: 10,
     borderColor: "#EDF2FF",
     borderWidth: 3,
@@ -767,7 +767,7 @@ const styles = StyleSheet.create({
   accordionContent: {
     backgroundColor: "#FFFFFF",
     padding: 12,
-    borderRadius: 30,
+    borderRadius: 10,
     marginTop: 5,
   },
   accordionText: {

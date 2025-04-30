@@ -66,7 +66,6 @@ export default function App() {
 function AppContent({ expoPushToken, setNotification }) {
   const dispatch = useDispatch();
   const [userData, setUserData] = useState(null);
-  console.log("userData: ", userData);
   useEffect(() => {
     const getData = async () => {
       try {

@@ -5,41 +5,28 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Keyboard,
   View,
   Text,
   Image,
 } from "react-native";
-import {
-  FlatList,
-  HStack,
-  Text as NBText,
-  View as NBView,
-  Actionsheet,
-  useDisclose,
-  Box,
-  Toast,
-} from "native-base";
+import { FlatList, HStack, Text as NBText, Box, Toast } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSelector, useDispatch } from "react-redux";
 import {
   setIntrestedProperties,
-  setTrendingProjects,
   setPropertyDetails,
 } from "../../../store/slices/propertyDetails";
 import config from "../../../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import ShareDetailsModal from "./ShareDetailsModal";
-import { Modal, TouchableWithoutFeedback } from "react-native";
 import bhk from "../../../assets/propertyicons/bhk.png";
 import direction from "../../../assets/propertyicons/direction.png";
 import location from "../../../assets/propertyicons/location.png";
 import parking from "../../../assets/propertyicons/parking.png";
 import shower from "../../../assets/propertyicons/shower.png";
-import yards from "../../../assets/propertyicons/yards.png";
 import ContactActionSheet from "../components/propertyDetailsComponents/ContactActionSheet.js";
+import SkeletonLoader from "../../../utils/SkeletonLoader";
 const PropertyCard = memo(
   ({
     item,
@@ -173,6 +160,7 @@ const PropertyCard = memo(
                 </Text>
               </View>
             </View>
+            <View style={styles.divider} />
             <View style={styles.bottomContainer}>
               <Text style={styles.priceText}>₹ {property.price}</Text>
               <TouchableOpacity
@@ -202,6 +190,7 @@ export default function LatestProperties({ activeTab }) {
   );
   const dispatch = useDispatch();
   const [properties, setProperties] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState(2);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
@@ -230,6 +219,7 @@ export default function LatestProperties({ activeTab }) {
       } catch (error) {
         console.error("Error fetching properties:", error);
       } finally {
+        setPendingRequests((prev) => prev - 1);
         setLoading(false);
         if (reset) setRefreshing(false);
       }
@@ -285,6 +275,8 @@ export default function LatestProperties({ activeTab }) {
       dispatch(setIntrestedProperties(likedIds));
     } catch (error) {
       console.error("Error fetching interested properties:", error);
+    } finally {
+      setPendingRequests((prev) => prev - 1);
     }
   };
   useEffect(() => {
@@ -297,20 +289,27 @@ export default function LatestProperties({ activeTab }) {
           await fetchIntrestedProperties(parsedUserDetails);
         } else {
           console.warn("No user details found in AsyncStorage");
+          setPendingRequests((prev) => prev - 1);
         }
         await fetchProperties(true);
       } catch (error) {
         console.error("Error fetching user details:", error);
+        setPendingRequests((prev) => prev - 1);
       }
     };
     getData();
   }, []);
   useEffect(() => {
+    if (pendingRequests === 0) {
+      setLoading(false);
+    }
+  }, [pendingRequests]);
+  useEffect(() => {
     const interval = setInterval(() => {
       fetchProperties(true);
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchProperties]);
   const shareProperty = async (property) => {
     try {
       await Share.share({
@@ -343,7 +342,6 @@ export default function LatestProperties({ activeTab }) {
     },
     [dispatch, navigation]
   );
-
   const handlePropertiesLists = useCallback(() => {
     navigation.navigate("PropertyList", { activeTab });
   }, [navigation, activeTab]);
@@ -385,6 +383,7 @@ export default function LatestProperties({ activeTab }) {
   };
   const onRefresh = async () => {
     setRefreshing(true);
+    setPendingRequests(2);
     await fetchProperties(true);
   };
   const handleEnquireSubmit = async (formData) => {
@@ -401,39 +400,59 @@ export default function LatestProperties({ activeTab }) {
       }
     >
       <View style={{ flex: 1 }}>
-        <View style={{ flex: 1 }}>
-          <FlatList
-            ref={flatListRef}
-            data={properties}
-            keyExtractor={(item, index) =>
-              item?.unique_property_id
-                ? item.unique_property_id
-                : `fallback-${index}`
-            }
-            renderItem={renderPropertyCard}
-            horizontal={true}
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            nestedScrollEnabled={true}
-            initialNumToRender={4}
-            windowSize={10}
-            maxToRenderPerBatch={4}
-            updateCellsBatchingPeriod={50}
-            removeClippedSubviews={true}
-            contentContainerStyle={{ paddingHorizontal: 10 }}
-            ListEmptyComponent={() =>
-              !loading && (
-                <NBText textAlign={"center"}>No properties found.</NBText>
-              )
-            }
-            ListFooterComponent={
-              <TouchableOpacity
-                style={styles.fixedExploreButton}
-                onPress={handlePropertiesLists}
-              ></TouchableOpacity>
-            }
-          />
+        <View style={{ flex: 1, paddingVertical: 10 }}>
+          {loading ? (
+            <SkeletonLoader />
+          ) : (
+            <>
+              <HStack py={2} mx={2} justifyContent={"space-between"}>
+                <NBText fontSize={20} fontFamily={"PoppinsSemiBold"}>
+                  Latest Properties
+                </NBText>
+                <TouchableOpacity onPress={handlePropertiesLists}>
+                  <NBText
+                    fontSize={15}
+                    fontFamily={"PoppinsSemiBold"}
+                    color={"#000"}
+                  >
+                    View All
+                  </NBText>
+                </TouchableOpacity>
+              </HStack>
+              <View style={{ flex: 1 }}>
+                <FlatList
+                  ref={flatListRef}
+                  data={properties}
+                  keyExtractor={(item, index) =>
+                    item?.unique_property_id
+                      ? item.unique_property_id
+                      : `fallback-${index}`
+                  }
+                  renderItem={renderPropertyCard}
+                  horizontal={true}
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                  nestedScrollEnabled={true}
+                  initialNumToRender={4}
+                  windowSize={10}
+                  maxToRenderPerBatch={4}
+                  updateCellsBatchingPeriod={50}
+                  removeClippedSubviews={true}
+                  contentContainerStyle={{ paddingHorizontal: 10 }}
+                  ListEmptyComponent={() => (
+                    <NBText textAlign={"center"}>No properties found.</NBText>
+                  )}
+                  ListFooterComponent={
+                    <TouchableOpacity
+                      style={styles.fixedExploreButton}
+                      onPress={handlePropertiesLists}
+                    />
+                  }
+                />
+              </View>
+            </>
+          )}
         </View>
       </View>
       <ContactActionSheet
@@ -448,38 +467,13 @@ export default function LatestProperties({ activeTab }) {
         type="enquireNow"
         selectedPropertyId={selectedPropertyId}
       />
-      {/* <Modal
-        transparent={true}
-        animationType="slide"
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setModalVisible(false);
-          }}
-        >
-          <View style={styles.modalContainer}>
-            <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-              <View style={styles.modalContent}>
-                <ShareDetailsModal
-                  type={type}
-                  modalVisible={modalVisible}
-                  setModalVisible={setModalVisible}
-                  selectedPropertyId={selectedPropertyId}
-                />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal> */}
     </ScrollView>
   );
 }
 const styles = StyleSheet.create({
   cardContainer: {
     width: 310,
-    height: 355,
+    height: 330,
     borderRadius: 20,
     backgroundColor: "#fdfdfd",
     marginRight: 15,
@@ -488,10 +482,11 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 6,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 1,
   },
   highlightedContainer: {
     width: 220,
@@ -501,10 +496,11 @@ const styles = StyleSheet.create({
     height: 160,
   },
   image: {
-    width: "98%",
+    width: "99%",
     height: "98%",
-    borderRadius: 20,
-    margin: 5,
+    borderRadius: 15,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   saleTag: {
     position: "absolute",
@@ -592,15 +588,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 15,
   },
+
   priceText: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#1D3A76",
     fontWeight: "600",
     fontFamily: "PoppinsSemiBold",
   },
   enquireButton: {
     backgroundColor: "#1D3A76",
-    paddingHorizontal: 18,
+    paddingHorizontal: 25,
     paddingVertical: 10,
     borderRadius: 30,
     fontFamily: "PoppinsSemiBold",
@@ -611,7 +608,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     fontFamily: "Poppins",
-    marginTop: 5,
+    marginTop: 0,
+    textAlignVertical: "center",
   },
   propertyNameOverlay: {
     position: "absolute",
@@ -688,5 +686,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     zIndex: 1000,
+  },
+  divider: {
+    height: 0.8,
+    backgroundColor: "#ddd",
   },
 });

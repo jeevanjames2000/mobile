@@ -1,4 +1,3 @@
-// FilterBar.js
 import React, { useState } from "react";
 import {
   FlatList,
@@ -8,14 +7,12 @@ import {
   View,
   Image,
 } from "react-native";
-
 import AllIcon from "../../../../assets/propertyicons/menu-bar.png";
 import VerifiedIcon from "../../../../assets/propertyicons/home-insurance.png";
 import newIcon from "../../../../assets/propertyicons/new launched.png";
 import ownerIcon from "../../../../assets/propertyicons/house-owner.png";
 import LuxuryIcon from "../../../../assets/propertyicons/property.png";
 import ReadyProperties from "../../../../assets/propertyicons/people.png";
-
 const filterOptions = [
   { name: "All", icon: AllIcon },
   { name: "Meetowner Verified", icon: VerifiedIcon },
@@ -24,17 +21,14 @@ const filterOptions = [
   { name: "Owner Properties", icon: ownerIcon },
   { name: "Luxury Properties", icon: LuxuryIcon },
 ];
-
 const FilterBar = ({ onFilterChange }) => {
   const [selectedFilter, setSelectedFilter] = useState("All");
-
   const handleFilterPress = (filter) => {
     setSelectedFilter(filter);
     if (onFilterChange) {
-      onFilterChange(filter); // Notify parent component of the selected filter
+      onFilterChange(filter);
     }
   };
-
   const renderFilterItem = ({ item }) => {
     const isSelected = item.name === selectedFilter;
     return (
@@ -53,16 +47,10 @@ const FilterBar = ({ onFilterChange }) => {
             styles.filterIcon,
             isSelected
               ? styles.selectedFilterIcon
-              : styles.unselectedFilterIcon, // Dynamically adjust icon size
+              : styles.unselectedFilterIcon,
           ]}
           tintColor={isSelected ? "#fff" : "#000"}
           resizeMode="contain"
-          onError={(e) =>
-            console.log(
-              `Error loading icon for ${item.name}:`,
-              e.nativeEvent.error
-            )
-          }
         />
         <Text
           style={[
@@ -77,7 +65,6 @@ const FilterBar = ({ onFilterChange }) => {
       </Pressable>
     );
   };
-
   return (
     <View style={styles.container}>
       <FlatList
@@ -91,7 +78,6 @@ const FilterBar = ({ onFilterChange }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#f5f5f5",
@@ -129,8 +115,8 @@ const styles = StyleSheet.create({
     height: 18,
   },
   selectedFilterIcon: {
-    width: 18 + 5, // Increase by 5
-    height: 18 + 5, // Increase by 5
+    width: 18 + 5,
+    height: 18 + 5,
   },
   filterText: {
     fontSize: 14,
@@ -144,5 +130,4 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 });
-
 export default FilterBar;

@@ -56,7 +56,10 @@ export default function FilterTabs() {
           onPress={() => handleTabChange(tab.id)}
         >
           <Text
-            style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}
+            style={[
+              styles.tabText,
+              activeTab === tab.id && styles.activeTabText,
+            ]}
           >
             {tab.label}
           </Text>
@@ -68,18 +71,18 @@ export default function FilterTabs() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     marginTop: 15,
     marginBottom: 15,
   },
   tab: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 25,
+    paddingVertical: 8,
     borderRadius: 30,
-    marginRight: 10,
+    marginRight: 8,
     backgroundColor: "#ffffff",
-    borderColor:"#DBDADA",
-    borderWidth:1,
+    borderColor: "#DBDADA",
+    borderWidth: 1,
   },
   activeTab: {
     backgroundColor: "#1D3A76",
@@ -87,7 +90,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 12,
     color: "#000",
-    fontFamily: 'PoppinsSemiBold',
+    fontFamily: "PoppinsSemiBold",
   },
   activeTabText: {
     color: "#fff",

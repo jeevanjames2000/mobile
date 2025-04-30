@@ -419,6 +419,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#fff",
     marginLeft: 4,
+    marginTop:3,
     fontFamily: "PoppinsSemiBold",
   },
   highlightedDirectionIcon: {

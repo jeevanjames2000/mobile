@@ -46,6 +46,8 @@ import {
   setSubType,
   setLocation,
 } from "../../../store/slices/searchSlice";
+import CustomHeaderFilter from "./SearchBarComponents/CustomHeaderFilter";
+
 export default function SearchBox() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -265,6 +267,8 @@ export default function SearchBox() {
       <Text style={styles.fullWidthText}>{item.label}</Text>
     </TouchableOpacity>
   );
+
+
   useEffect(() => {
     const backAction = () => {
       if (navigation.canGoBack()) {
@@ -283,6 +287,24 @@ export default function SearchBox() {
     );
     return () => backHandler.remove();
   }, [navigation]);
+
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      header: () => (
+        <CustomHeaderFilter
+          navigation={navigation}
+          title="Filter"
+          handleClearAll={handleClearAll}
+          
+        />
+      ),
+    });
+  }, [navigation,handleClearAll ]);
+
+  const handleClearAll = () => {
+    console.log('clicked handle clear all');
+  }
   const handlePropertiesLists = () => {
     navigation.navigate("PropertyList");
   };

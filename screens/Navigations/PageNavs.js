@@ -18,8 +18,11 @@ import Support from "../Pages/Support";
 import Profile from "../Pages/components/Profile";
 import { useNavigation } from "@react-navigation/native";
 import Properties from "../Pages/components/LatestProperties";
+import ShortSoon from "../Pages/ShortSoon";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
+
 const HomeHeader = () => {
   const navigation = useNavigation();
   return (
@@ -47,35 +50,21 @@ const HomeHeader = () => {
 };
 const CustomHeader = ({ title, icon, routeName }) => {
   const navigation = useNavigation();
-  if (routeName === "Shorts") {
-    return (
-      <HStack
-        style={styles.transparentHeader}
-        justifyContent="flex-start"
-        alignItems="center"
-      >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={styles.iconButton}
-        >
-          <Icon as={Ionicons} name="arrow-back" size={6} color="#fff" />
-        </Pressable>
-      </HStack>
-    );
-  }
   return (
     <HStack
       style={styles.header}
-      justifyContent="space-between"
+      justifyContent="start"
       alignItems="center"
+      
+
     >
       <Pressable onPress={() => navigation.goBack()}>
-        <Icon as={Ionicons} name="arrow-back" size={6} color="#000" />
+        <Icon as={Ionicons} name="chevron-back-outline" size={6} color="#000" />
       </Pressable>
-      <Text fontSize="xl" fontWeight="bold">
+      <Text style={styles.title}>
         {title}
       </Text>
-      <Icon as={Ionicons} name={icon || null} size={6} color="#000" />
+      
     </HStack>
   );
 };
@@ -121,10 +110,7 @@ function BottomTabs() {
           }
         },
         tabBarShowLabel: false,
-        tabBarStyle:
-          route.name === "Shorts" || isKeyboardVisible
-            ? styles.hiddenTabBar
-            : styles.tabBar,
+        tabBarStyle: styles.tabBar,
         tabBarIcon: ({ focused, color }) => {
           let iconName;
           if (route.name === "Home") {
@@ -150,10 +136,10 @@ function BottomTabs() {
       <Tab.Screen name="Wishlist" component={Wishlist} />
       <Tab.Screen
         name="Shorts"
-        component={Shorts}
-        options={{
-          tabBarStyle: { display: "none" },
-        }}
+        component={ShortSoon}
+        // options={{
+        //   tabBarStyle: { display: "none" },
+        // }}
       />
       <Tab.Screen name="Support" component={Support} />
     </Tab.Navigator>
@@ -227,5 +213,12 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 50 : 20,
     paddingHorizontal: 18,
     backgroundColor: "#fff",
+  },
+  title: {
+    fontSize: 15,
+    marginLeft: 10,
+    marginTop:2,
+    color: "#000",
+    fontFamily: "PoppinsSemiBold",
   },
 });

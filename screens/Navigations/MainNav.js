@@ -2,7 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Pressable, Text, StyleSheet } from "react-native";
+import { Pressable, Text, StyleSheet, View, TouchableOpacity } from "react-native";
 import { HStack, Icon } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
 import LoginScreen from "../Auth/Login";
@@ -32,6 +32,32 @@ const CustomHeader = ({ navigation, title, route, icon }) => {
       <Pressable onPress={() => navigation.navigate(route)}>
         <Icon as={Ionicons} name={icon} size={6} color="#000" />
       </Pressable>
+    </HStack>
+  );
+};
+
+
+const CustomHeaderFilter = ({ navigation, title, handleClearAll,  }) => {
+  return (
+    <HStack
+      style={styles.header}
+      justifyContent="space-between"
+      alignItems="center"
+    >
+      <View>
+        <HStack>
+          <Pressable onPress={() => navigation.goBack()} style={styles.iconButton}>
+            <Icon as={Ionicons} name="chevron-back-outline" size={6} color="#000" />
+          </Pressable>
+          <Text style={styles.titleFilter}>{title}</Text>
+        </HStack>
+        
+      </View>
+      <TouchableOpacity onPress={handleClearAll}>
+        <Text style={styles.clear}>Clear all</Text>
+      </TouchableOpacity>
+      
+    
     </HStack>
   );
 };
@@ -105,9 +131,9 @@ export default function MainNav() {
             component={Profile}
             options={({ navigation }) => ({
               header: () => (
-                <CustomHeader
+                <CustomHeaderProperties
                   navigation={navigation}
-                  title=""
+                  title="profile"
                   route="dashboard"
                   icon=""
                 />
@@ -117,16 +143,7 @@ export default function MainNav() {
           <Stack.Screen
             name="SearchBox"
             component={SearchBox}
-            options={({ navigation }) => ({
-              header: () => (
-                <CustomHeader
-                  navigation={navigation}
-                  title="Filters"
-                  route="Wishlist"
-                  icon="heart-outline"
-                />
-              ),
-            })}
+              options={{ headerShown: true }} 
           />
           <Stack.Screen
             name="PropertyList"
@@ -171,4 +188,19 @@ const styles = StyleSheet.create({
     color: "#000",
     fontFamily: "PoppinsSemiBold",
   },
+  titleFilter:{
+    fontSize: 18,
+    marginLeft: 5,
+    color: "#000",
+    marginTop:5,
+    fontFamily: "PoppinsSemiBold",
+  },
+  clear:{
+    fontSize: 12,
+  
+    color: "#1A1A1A",
+    marginTop:5,
+    fontFamily: "Poppins",
+    fontWeight:'400'
+  }
 });

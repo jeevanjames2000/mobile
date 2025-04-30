@@ -226,14 +226,7 @@ export default function PropertyDetails({ navigation }) {
       });
     }
   };
-  const handleViewInMaps = () => {
-    if (location?.latitude && location?.longitude) {
-      const url = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-      Linking.openURL(url);
-    } else {
-      alert("Location not available");
-    }
-  };
+
   const getOwnerDetails = async (property) => {
     const response = await fetch(
       `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property?.unique_property_id}`
@@ -386,6 +379,7 @@ export default function PropertyDetails({ navigation }) {
           isInterested={isInterested}
           handleIntrests={handleIntrests}
           handleShare={handleShare}
+          property={property}
         />
       ),
     });

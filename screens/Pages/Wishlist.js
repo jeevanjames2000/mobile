@@ -48,7 +48,7 @@ export default function Wishlist() {
   const [userInfo, setUserInfo] = useState(null);
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
     const backAction = () => {
       if (navigation.canGoBack()) {

@@ -49,7 +49,7 @@ export default function ShortSoon() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f5",
   },
   contentContainer: {
     flex: 1,

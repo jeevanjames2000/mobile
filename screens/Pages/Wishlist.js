@@ -381,7 +381,7 @@ export default function Wishlist() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f5",
     paddingHorizontal: 5,
   },
   safeArea: {
@@ -389,8 +389,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   containerVstack: {
+    borderRadius: 20,
     backgroundColor: "#ffffff",
-    margin: 1,
+    margin: 10,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: {

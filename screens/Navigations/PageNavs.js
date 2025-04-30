@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     paddingTop: Platform.OS === "ios" ? 50 : 20,
     paddingHorizontal: 18,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f5",
   },
   title: {
     fontSize: 15,

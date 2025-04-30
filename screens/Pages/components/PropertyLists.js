@@ -321,6 +321,8 @@ export default function PropertyLists({ route }) {
       location || prevSearch || "Hyderabad"
     );
   }, [tab, property_in, sub_type, bhk, occupancy, location, price, prevSearch]);
+
+
   const preloadImages = useCallback((nextProperties) => {
     const prefetchedUrls = prefetchedUrlsRef.current;
     const imageUrls = nextProperties
@@ -361,6 +363,8 @@ export default function PropertyLists({ route }) {
       console.warn("Error in prefetchImages:", err)
     );
   }, []);
+
+
   const mapPriceFilterToApiValue = (priceFilter) => {
     const validFilters = [
       "Relevance",
@@ -370,6 +374,8 @@ export default function PropertyLists({ route }) {
     ];
     return validFilters.includes(priceFilter) ? priceFilter : "Relevance";
   };
+
+  
   const fetchProperties = useCallback(
     async (reset = false, appliedFilters = filters, searchedLocation) => {
       if (!hasMore && !reset) return;

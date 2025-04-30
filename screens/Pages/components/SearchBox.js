@@ -22,6 +22,8 @@ import {
   FlatList,
   ScrollView,
   KeyboardAvoidingView,
+  Toast,
+  Box,
 } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -63,9 +65,7 @@ export default function SearchBox() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState(location || "");
-  const [selectedPropertyType, setSelectedPropertyType] = useState(
-    tab || "Buy"
-  );
+  const [selectedPropertyType, setSelectedPropertyType] = useState(tab || "Buy");
   const [selectedBuildingType, setSelectedBuildingType] = useState(
     property_in || "Residential"
   );
@@ -78,6 +78,7 @@ export default function SearchBox() {
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedPossession, setSelectedPossession] = useState(occupancy || "");
   const inputRef = useRef(null);
+
   const mapTabToPropertyFor = (tab) => {
     const mapping = {
       Buy: "Sell",
@@ -87,6 +88,7 @@ export default function SearchBox() {
     };
     return mapping[tab] || "Sell";
   };
+
   useEffect(() => {
     setSelectedPropertyType(tab || "Buy");
     setSelectedBuildingType(property_in || "Residential");
@@ -95,6 +97,7 @@ export default function SearchBox() {
     setSelectedPossession(occupancy || "");
     setSearchQuery(location || "");
   }, [tab, property_in, sub_type, bhk, occupancy, location]);
+
   const togglePropertyType = (type) => {
     setSelectedPropertyType(type);
     const payload = {
@@ -110,28 +113,36 @@ export default function SearchBox() {
       payload.property_in = "";
     } else if (type === "Commercial") {
       payload.property_in = "Commercial";
-      payload.sub_type = "";
+      payload.sub_type = "Office"; // Default to "Office" for Commercial
     } else if (type === "Buy" || type === "Rent") {
       payload.property_in = "Residential";
       payload.sub_type = "Apartment";
     }
+    setSelectedBuildingType(payload.property_in || "Residential");
+    setSelectedSubPropertyType(payload.sub_type || "Apartment");
+    setSelectedBedrooms("");
+    setSelectedPossession("");
     dispatch(setSearchData(payload));
   };
+
   const toggleBuildingType = (type) => {
     setSelectedBuildingType(type);
     dispatch(setPropertyIn(type));
     if (type === "Commercial") {
-      setSelectedSubPropertyType("");
+      setSelectedSubPropertyType("Office"); // Default to "Office"
       setSelectedBedrooms("");
-      dispatch(setSubType(""));
+      dispatch(setSubType("Office"));
       dispatch(setBHK(null));
     } else {
       setSelectedSubPropertyType("Apartment");
       dispatch(setSubType("Apartment"));
     }
+    setSelectedPossession("");
+    dispatch(setOccupancy(""));
   };
+
   const toggleSubPropertyType = (type) => {
-    const validSubTypes = [
+    const validResidentialSubTypes = [
       "Apartment",
       "Independent Villa",
       "Independent House",
@@ -139,6 +150,19 @@ export default function SearchBox() {
       "Land",
       "Others",
     ];
+    const validCommercialSubTypes = [
+      "Office",
+      "Retail Shop",
+      "Showroom",
+      "Warehouse",
+      "Plot",
+      "Others",
+    ];
+    const validSubTypes =
+      selectedBuildingType === "Commercial"
+        ? validCommercialSubTypes
+        : validResidentialSubTypes;
+
     if (validSubTypes.includes(type)) {
       setSelectedSubPropertyType(type);
       dispatch(setSubType(type));
@@ -148,6 +172,7 @@ export default function SearchBox() {
       }
     }
   };
+
   const toggleBedroom = (type) => {
     const validBHKs = [
       "1 BHK",
@@ -164,6 +189,7 @@ export default function SearchBox() {
       dispatch(setBHK(type));
     }
   };
+
   const toggleFurnishing = (type) => setSelectedFurnishing(type);
   const togglePostedBy = (type) => setSelectedPostedBy(type);
   const toggleAmenity = (type) =>
@@ -172,13 +198,19 @@ export default function SearchBox() {
         ? prev.filter((item) => item !== type)
         : [...prev, type]
     );
+
   const togglePossession = (type) => {
-    const validPossessionStatuses = ["Ready to Move", "Under Construction"];
+    const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
+    const validPossessionStatuses = isPlotOrLand
+      ? ["Future", "Immediate"]
+      : ["Ready to Move", "Under Construction"];
+
     if (validPossessionStatuses.includes(type)) {
       setSelectedPossession(type);
       dispatch(setOccupancy(type));
     }
   };
+
   useEffect(() => {
     const fetchCities = async () => {
       try {
@@ -196,6 +228,7 @@ export default function SearchBox() {
     fetchCities();
     getUserLocation();
   }, [dispatch, cities.length]);
+
   const getUserLocation = async () => {
     setLoading(true);
     try {
@@ -225,6 +258,7 @@ export default function SearchBox() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     setLocations(cities);
     setFilteredLocations(cities);
@@ -243,6 +277,7 @@ export default function SearchBox() {
       }
     }
   }, [cities, userLocation, dispatch]);
+
   const handleCitySearch = (query) => {
     setSearchQuery(query);
     setFilteredLocations(
@@ -253,12 +288,14 @@ export default function SearchBox() {
           )
     );
   };
+
   const handleCitySelect = (item) => {
     setSelectedLocation(item);
     dispatch(setLocation(item.label));
     onClose();
     setSearchQuery("");
   };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
       onPress={() => handleCitySelect(item)}
@@ -267,7 +304,6 @@ export default function SearchBox() {
       <Text style={styles.fullWidthText}>{item.label}</Text>
     </TouchableOpacity>
   );
-
 
   useEffect(() => {
     const backAction = () => {
@@ -288,33 +324,100 @@ export default function SearchBox() {
     return () => backHandler.remove();
   }, [navigation]);
 
-
   React.useLayoutEffect(() => {
     navigation.setOptions({
       header: () => (
         <CustomHeaderFilter
           navigation={navigation}
-          title="Filter"
+          title="Filters"
           handleClearAll={handleClearAll}
-          
         />
       ),
     });
-  }, [navigation,handleClearAll ]);
+  }, [navigation, handleClearAll]);
 
   const handleClearAll = () => {
-    console.log('clicked handle clear all');
-  }
+    setSelectedPropertyType("Buy");
+    setSelectedBuildingType("Residential");
+    setSelectedSubPropertyType("Apartment");
+    setSelectedBedrooms("");
+    setSelectedPossession("");
+    setSelectedFurnishing("");
+    setSelectedPostedBy("");
+    setSelectedAmenities([]);
+    setSelectedLocation(null);
+    setSearchQuery("");
+    setFilteredLocations(locations);
+
+    dispatch(
+      setSearchData({
+        tab: "Buy",
+        property_for: "Sell",
+        property_in: "Residential",
+        sub_type: "Apartment",
+        bhk: null,
+        occupancy: "",
+        location: "",
+        budget: "",
+        price: "Relevance",
+        plot_subType: "Buy",
+        commercial_subType: "Buy",
+      })
+    );
+
+    Toast.show({
+      duration: 1000,
+      placement: "top-right",
+      render: () => {
+        return (
+          <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            Filters cleared
+          </Box>
+        );
+      },
+    });
+  };
+
   const handlePropertiesLists = () => {
     navigation.navigate("PropertyList");
   };
+
+  // Define property types based on building type
+  const residentialPropertyTypes = [
+    "Apartment",
+    "Independent Villa",
+    "Independent House",
+    "Plot",
+    "Land",
+    "Others",
+  ];
+  const commercialPropertyTypes = [
+    "Office",
+    "Retail Shop",
+    "Showroom",
+    "Warehouse",
+    "Plot",
+    "Others",
+  ];
+
+  // Determine which property types to show
+  const propertyTypes =
+    selectedBuildingType === "Commercial" || selectedPropertyType === "Commercial"
+      ? commercialPropertyTypes
+      : residentialPropertyTypes;
+
+  // Determine possession statuses
+  const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
+  const possessionStatuses = isPlotOrLand
+    ? ["Future", "Immediate"]
+    : ["Ready to Move", "Under Construction"];
+
   return (
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
         keyboardShouldPersistTaps="handled"
       >
-        {}
         <View style={styles.shadowSection}>
           <View style={styles.locationSection}>
             <Text style={styles.locationLabel}>You are searching in</Text>
@@ -327,7 +430,6 @@ export default function SearchBox() {
               </HStack>
             </TouchableOpacity>
           </View>
-          {}
           <View style={styles.propertyTypeIconsContainer}>
             <PropertyTypeIcon
               type="Buy"
@@ -360,6 +462,22 @@ export default function SearchBox() {
           setSearchQuery={setSearchQuery}
           setLocation={(loc) => dispatch(setLocation(loc))}
         />
+         <FilterSection title="Looking For">
+          <View style={styles.filterOptionsRow}>
+            <FilterOption
+              label="Buy"
+              selected={selectedPropertyType === "Buy"}
+              onPress={() => togglePropertyType("Buy")}
+              checkmark={true}
+            />
+            <FilterOption
+              label="Rent"
+              selected={selectedPropertyType === "Rent"}
+              onPress={() => togglePropertyType("Rent")}
+              checkmark={true}
+            />
+          </View>
+        </FilterSection>
         <FilterSection title="Building Type">
           <View style={styles.filterOptionsRow}>
             <FilterOption
@@ -378,96 +496,53 @@ export default function SearchBox() {
         </FilterSection>
         <FilterSection title="Property Type">
           <View style={styles.filterOptionsGrid}>
-            <FilterOption
-              label="Apartment"
-              selected={selectedSubPropertyType === "Apartment"}
-              onPress={() => toggleSubPropertyType("Apartment")}
-            />
-            <FilterOption
-              label="Independent Villa"
-              selected={selectedSubPropertyType === "Independent Villa"}
-              onPress={() => toggleSubPropertyType("Independent Villa")}
-            />
-            <FilterOption
-              label="Independent House"
-              selected={selectedSubPropertyType === "Independent House"}
-              onPress={() => toggleSubPropertyType("Independent House")}
-            />
-            <FilterOption
-              label="Plot"
-              selected={selectedSubPropertyType === "Plot"}
-              onPress={() => toggleSubPropertyType("Plot")}
-            />
-            <FilterOption
-              label="Land"
-              selected={selectedSubPropertyType === "Land"}
-              onPress={() => toggleSubPropertyType("Land")}
-            />
-            <FilterOption
-              label="Others"
-              selected={selectedSubPropertyType === "Others"}
-              onPress={() => toggleSubPropertyType("Others")}
-            />
+            {propertyTypes.map((type) => (
+              <FilterOption
+                key={type}
+                label={type}
+                selected={selectedSubPropertyType === type}
+                onPress={() => toggleSubPropertyType(type)}
+              />
+            ))}
           </View>
         </FilterSection>
-        <FilterSection title="Bedrooms">
-          <View style={styles.filterOptionsRow}>
-            <FilterOption
-              label="1 BHK"
-              selected={selectedBedrooms === "1 BHK"}
-              onPress={() => toggleBedroom("1 BHK")}
-            />
-            <FilterOption
-              label="2 BHK"
-              selected={selectedBedrooms === "2 BHK"}
-              onPress={() => toggleBedroom("2 BHK")}
-            />
-            <FilterOption
-              label="3 BHK"
-              selected={selectedBedrooms === "3 BHK"}
-              onPress={() => toggleBedroom("3 BHK")}
-            />
-            <FilterOption
-              label="4 BHK"
-              selected={selectedBedrooms === "4 BHK"}
-              onPress={() => toggleBedroom("4 BHK")}
-            />
-          </View>
-          <View style={styles.filterOptionsRow}>
-            <FilterOption
-              label="5 BHK"
-              selected={selectedBedrooms === "5 BHK"}
-              onPress={() => toggleBedroom("5 BHK")}
-            />
-            <FilterOption
-              label="6 BHK"
-              selected={selectedBedrooms === "6 BHK"}
-              onPress={() => toggleBedroom("6 BHK")}
-            />
-            <FilterOption
-              label="7 BHK"
-              selected={selectedBedrooms === "7 BHK"}
-              onPress={() => toggleBedroom("7 BHK")}
-            />
-            <FilterOption
-              label="8 BHK"
-              selected={selectedBedrooms === "8 BHK"}
-              onPress={() => toggleBedroom("8 BHK")}
-            />
-          </View>
-        </FilterSection>
+        {selectedBuildingType !== "Commercial" &&
+          selectedPropertyType !== "Commercial" &&
+          selectedSubPropertyType !== "Land" &&
+          selectedSubPropertyType !== "Plot" && (
+            <FilterSection title="Bedrooms">
+              <View style={styles.filterOptionsRow}>
+                {["1 BHK", "2 BHK", "3 BHK", "4 BHK"].map((bhk) => (
+                  <FilterOption
+                    key={bhk}
+                    label={bhk}
+                    selected={selectedBedrooms === bhk}
+                    onPress={() => toggleBedroom(bhk)}
+                  />
+                ))}
+              </View>
+              <View style={styles.filterOptionsRow}>
+                {["5 BHK", "6 BHK", "7 BHK", "8 BHK"].map((bhk) => (
+                  <FilterOption
+                    key={bhk}
+                    label={bhk}
+                    selected={selectedBedrooms === bhk}
+                    onPress={() => toggleBedroom(bhk)}
+                  />
+                ))}
+              </View>
+            </FilterSection>
+        )}
         <FilterSection title="Possession Status">
           <View style={styles.filterOptionsRow}>
-            <FilterOption
-              label="Ready to Move"
-              selected={selectedPossession === "Ready to Move"}
-              onPress={() => togglePossession("Ready to Move")}
-            />
-            <FilterOption
-              label="Under Construction"
-              selected={selectedPossession === "Under Construction"}
-              onPress={() => togglePossession("Under Construction")}
-            />
+            {possessionStatuses.map((status) => (
+              <FilterOption
+                key={status}
+                label={status}
+                selected={selectedPossession === status}
+                onPress={() => togglePossession(status)}
+              />
+            ))}
           </View>
         </FilterSection>
         <View style={styles.bottomSpacing} />
@@ -483,7 +558,6 @@ export default function SearchBox() {
           </Text>
         </HStack>
       </TouchableOpacity>
-      {}
       <Actionsheet isOpen={isOpen} onClose={onClose}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -523,6 +597,10 @@ export default function SearchBox() {
     </View>
   );
 }
+
+
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -10,6 +10,9 @@ import * as Device from "expo-device";
 import { Platform, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import registerNNPushToken from "native-notify";
+import { enableScreens } from "react-native-screens";
+enableScreens();
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,

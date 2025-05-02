@@ -247,7 +247,10 @@ export default function LatestProperties({ activeTab }) {
       status: isAlreadyLiked ? 1 : 0,
     };
     try {
-      await axios.post(`${config.awsApiUrl}/fav/v1/postIntrest`, payload);
+      const res = await axios.post(
+        `${config.awsApiUrl}/fav/v1/postIntrest`,
+        payload
+      );
       await fetchIntrestedProperties(userInfo);
       Toast.show({
         placement: "top-right",
@@ -473,12 +476,13 @@ export default function LatestProperties({ activeTab }) {
 const styles = StyleSheet.create({
   cardContainer: {
     width: 310,
-    height: 330,
+    height: "auto",
+    paddingBottom: 5,
     borderRadius: 20,
     backgroundColor: "#fdfdfd",
     marginRight: 15,
     marginVertical: 10,
-    overflow: "hidden",
+    // overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -496,7 +500,7 @@ const styles = StyleSheet.create({
     height: 160,
   },
   image: {
-    width: "99%",
+    width: "100%",
     height: "98%",
     borderRadius: 15,
     borderBottomLeftRadius: 0,
@@ -587,6 +591,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingTop: 15,
+    paddingBottom: 5,
   },
 
   priceText: {

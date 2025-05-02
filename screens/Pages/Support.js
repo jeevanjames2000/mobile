@@ -135,9 +135,9 @@ export default function Support() {
     }
     setIsLoadingEffect(true);
     axios
-      .post(`https://api.meetowner.in/support/support`, {
+      .post(`https://api.meetowner.in/enquiry/v1/contactUs`, {
         name: formData.name,
-        mobile_number: formData.mobile,
+        mobile: formData.mobile,
         email: formData.email,
         message: formData.message,
         user_id: userInfo.user_id,

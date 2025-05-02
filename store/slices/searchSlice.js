@@ -9,11 +9,13 @@ const searchSlice = createSlice({
     bhk: null,
     budget: "",
     sub_type: "Apartment",
-    plot_subType: "Buy",
+    plot_subType: "Sell",
     commercial_subType: "Buy",
     occupancy: "",
+    possession_status: "",
+    plotPossesion: "Immediate",
     location: "",
-    price:"Relevance",
+    price: "Relevance",
     userCity: null,
     loading: false,
     error: null,
@@ -40,13 +42,22 @@ const searchSlice = createSlice({
     setSubType: (state, action) => {
       state.sub_type = action.payload;
     },
+    setPlotSubType: (state, action) => {
+      state.plot_subType = action.payload;
+    },
     setOccupancy: (state, action) => {
       state.occupancy = action.payload;
+    },
+    setPossesionStatus: (state, action) => {
+      state.possession_status = action.payload;
+    },
+    setPlotPossesion: (state, action) => {
+      state.plotPossesion = action.payload;
     },
     setLocation: (state, action) => {
       state.location = action.payload;
     },
-    setPrice :(state,action) => {
+    setPrice: (state, action) => {
       state.price = action.payload;
     },
     setUserCity: (state, action) => {
@@ -81,6 +92,8 @@ export const {
   setBudget,
   setSubType,
   setOccupancy,
+  setPossesionStatus,
+  setPlotPossesion,
   setLocation,
   setPrice,
   setUserCity,

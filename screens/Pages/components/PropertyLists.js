@@ -36,7 +36,6 @@ import WhatsAppIcon from "../../../assets/propertyicons/whatsapp.png";
 import ApprovedIcon from "../../../assets/propertyicons/verified.png";
 import SearchBarProperty from "./propertyDetailsComponents/SearchBarProperty";
 import FilterBar from "./propertyDetailsComponents/FilterBar";
-import PropertyImage from "./propertyDetailsComponents/PropertyImage";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { setLocation } from "../../../store/slices/searchSlice";
 import { debounce } from "lodash";
@@ -76,11 +75,25 @@ const PropertyCard = memo(
       setIsLiked((prev) => !prev);
     };
     const [imageError, setImageError] = useState(false);
-    const placeholderImage = "https://placehold.co/600x400";
+    const placeholderImage = "https://placehold.co/400x200.png";
     const imageUri =
       item?.image && item.image.trim() !== "" && !imageError
         ? `https://api.meetowner.in/uploads/${item.image}`
         : placeholderImage;
+    const getUserTypeColor = (type) => {
+      switch (type) {
+        case 3:
+          return "#1e3a8a";
+        case 4:
+          return "#7e22ce";
+        case 5:
+          return "#16a34a";
+        case 6:
+          return "#f97316";
+        default:
+          return "#1e3a8a";
+      }
+    };
     return (
       <View style={styles.containerVstack}>
         <Pressable onPress={() => onNavigate(item)}>
@@ -143,6 +156,9 @@ const PropertyCard = memo(
                     : "Future"}
                 </Text>
               )}
+              {["Others", "Office", "Retail Shop"].includes(item.sub_type) && (
+                <Text style={styles.possessionText}>{item.occupancy}</Text>
+              )}
               <Text style={styles.possesionText}>|</Text>
               <Text style={styles.possesionText}>
                 {["Plot", "Land"].includes(item.sub_type)
@@ -156,7 +172,7 @@ const PropertyCard = memo(
             </HStack>
             <VStack style={styles.contentContainer}>
               <HStack justifyContent="space-between" alignItems="center">
-                <Text style={styles.propertyText}>
+                <Text style={styles.propertyText} numberOfLines={1}>
                   {item.property_name || "N/A"}
                 </Text>
                 <HStack
@@ -221,12 +237,17 @@ const PropertyCard = memo(
           <VStack flex={0.5} justifyContent="center">
             <Text
               style={styles.username}
-              numberOfLines={2}
+              numberOfLines={1}
               ellipsizeMode="tail"
             >
               {item?.user?.name || "Unknown"}
             </Text>
-            <Text style={styles.userType}>
+            <Text
+              style={[
+                styles.userType,
+                { color: getUserTypeColor(item?.user?.user_type) },
+              ]}
+            >
               {userTypeMap[item?.user?.user_type] || "Unknown"}
             </Text>
           </VStack>
@@ -298,6 +319,7 @@ export default function PropertyLists({ route }) {
     bhk,
     occupancy,
     location,
+    possession_status,
     price,
     city,
   } = useSelector((state) => state.search);
@@ -317,6 +339,7 @@ export default function PropertyLists({ route }) {
     property_cost: "",
     priceFilter: price || "Relevance",
     occupancy: occupancy || "",
+    possession_status: possession_status || "",
     property_status: 1,
   });
   const mapPriceFilterToApiValue = (priceFilter) => {
@@ -349,10 +372,11 @@ export default function PropertyLists({ route }) {
         (tab === "Plot"
           ? "Plot"
           : tab === "Commercial"
-          ? "Commercial"
+          ? "Retail Shop"
           : "Apartment"),
       bedrooms: bhk || "",
       occupancy: occupancy || "",
+      possession_status: possession_status || "",
       search: location || "",
       priceFilter: price || "Relevance",
       property_cost: "",
@@ -380,6 +404,9 @@ export default function PropertyLists({ route }) {
           setPaginationLoading(false);
           return;
         }
+        const isPlotOrLand =
+          appliedFilters.sub_type === "Plot" ||
+          appliedFilters.sub_type === "Land";
         const queryParams = new URLSearchParams({
           page: pageToFetch,
           property_for: appliedFilters.property_for || "Sell",
@@ -393,7 +420,9 @@ export default function PropertyLists({ route }) {
           priceFilter: encodeURIComponent(
             mapPriceFilterToApiValue(appliedFilters.priceFilter)
           ),
-          occupancy: appliedFilters.occupancy || "",
+          ...(isPlotOrLand
+            ? { possession_status: appliedFilters.possession_status || "" }
+            : { occupancy: appliedFilters.occupancy || "" }),
           property_status: "1",
         }).toString();
         const url = `https://api.meetowner.in/listings/v1/getAllPropertiesByType?${queryParams}`;
@@ -628,9 +657,7 @@ export default function PropertyLists({ route }) {
     async (property) => {
       try {
         let ownerData = await getOwnerDetails(property);
-
         const ownerPhone = ownerData?.mobile;
-
         if (!ownerPhone) {
           Toast.show({
             placement: "top-right",
@@ -874,11 +901,13 @@ const styles = StyleSheet.create({
     color: "#7C7C7C",
     fontFamily: "Poppins",
     fontSize: 10,
+    fontWeight: "bold",
   },
   userType: {
     color: "#7C7C7C",
     fontFamily: "Poppins",
     fontSize: 10,
+    fontWeight: "bold",
   },
   possesionText: {
     fontSize: 14,
@@ -892,7 +921,7 @@ const styles = StyleSheet.create({
   },
   buttonStyles: {
     backgroundColor: "#1D3A76",
-    paddingHorizontal: 15,
+    paddingHorizontal: 17,
     paddingVertical: 10,
     borderRadius: 30,
   },
@@ -905,7 +934,7 @@ const styles = StyleSheet.create({
   },
   whatsbuttonStyles: {
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 15,
+    paddingHorizontal: 17,
     paddingVertical: 10,
     borderRadius: 30,
     borderColor: "#25D366",

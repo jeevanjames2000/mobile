@@ -1,6 +1,6 @@
 import React from "react";
-import { Pressable, Text, StyleSheet, View } from "react-native";
-import { HStack } from "native-base";
+import { Pressable, Text, StyleSheet, View, SafeAreaView } from "react-native";
+import { HStack, StatusBar } from "native-base";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 
@@ -17,13 +17,14 @@ const PropertyHeader = ({
     navigate.navigate("Wishlist");
   };
   return (
-    <HStack
-      style={styles.header}
-      justifyContent="space-between"
-      alignItems="center"
-    >
-      <View>
-        <HStack>
+    <SafeAreaView>
+      <StatusBar barStyle="dark-content" backgroundColor={"#f5f5f5"} />
+      <HStack
+        style={styles.header}
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <HStack alignItems={"center"} space={2}>
           <Pressable
             onPress={() => navigation.goBack()}
             style={styles.iconButton}
@@ -33,45 +34,45 @@ const PropertyHeader = ({
 
           <Text style={styles.title}>{title}</Text>
         </HStack>
-      </View>
 
-      <View>
-        <HStack space={4}>
-          <Pressable onPress={handleNavigate} style={styles.iconButton}>
-            <Ionicons
-              name={
-                isInterested === property.unique_property_id
-                  ? "heart"
-                  : "heart-outline"
-              }
-              size={24}
-              color={
-                isInterested === property.unique_property_id ? "red" : "#000"
-              }
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => handleShare && handleShare()}
-            style={styles.iconButton}
-          >
-            <Ionicons name="share-social-outline" size={24} color="#000" />
-          </Pressable>
-        </HStack>
-      </View>
-    </HStack>
+        <View>
+          <HStack space={4}>
+            <Pressable onPress={handleNavigate} style={styles.iconButton}>
+              <Ionicons
+                name={
+                  isInterested === property.unique_property_id
+                    ? "heart"
+                    : "heart-outline"
+                }
+                size={24}
+                color={
+                  isInterested === property.unique_property_id ? "red" : "#000"
+                }
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => handleShare && handleShare()}
+              style={styles.iconButton}
+            >
+              <Ionicons name="share-social-outline" size={24} color="#000" />
+            </Pressable>
+          </HStack>
+        </View>
+      </HStack>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     padding: 10,
+    alignItems: "center",
     backgroundColor: "#f5f5f5",
   },
   iconButton: {
     padding: 8,
   },
   title: {
-    marginTop: 5,
     fontSize: 18,
     fontFamily: "PoppinsSemiBold",
     color: "#000",

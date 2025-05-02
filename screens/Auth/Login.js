@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { Box, Image, Input, Toast } from "native-base";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   Platform,
   BackHandler,
   Alert,
+  TextInput,
+  Animated,
 } from "react-native";
 import axios from "axios";
 import { useDispatch } from "react-redux";
@@ -182,6 +184,39 @@ export default function LoginScreen() {
     );
     return () => backHandler.remove();
   }, []);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const bottomSheetTranslate = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+        Animated.timing(bottomSheetTranslate, {
+          toValue: 100, // Adjust as needed
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+        Animated.timing(bottomSheetTranslate, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -195,21 +230,31 @@ export default function LoginScreen() {
             alt="Meet Owner"
             resizeMode="cover"
           />
-          <View style={styles.bottomSheet}>
+          <Animated.View
+            style={[
+              styles.bottomSheet,
+              { transform: [{ translateY: bottomSheetTranslate }] },
+            ]}
+          >
             <Image
               source={require("../../assets/Untitled-22.png")}
               alt="Meet Owner Logo"
               style={styles.logo2}
               resizeMethod="contain"
             />
-            <Input
-              variant="unstyled"
-              placeholder="+91 Please enter your mobile number"
-              keyboardType="phone-pad"
-              style={styles.input}
-              value={mobile}
-              onChangeText={handleChange}
-            />
+            <View style={styles.inputWrapper}>
+              <Text style={styles.prefix}>+91</Text>
+              <TextInput
+                style={styles.mobileInput}
+                keyboardType="phone-pad"
+                value={mobile}
+                onChangeText={handleChange}
+                maxLength={10}
+                placeholder="Enter mobile number"
+                placeholderTextColor="#ccc"
+              />
+            </View>
+
             <TouchableOpacity
               style={styles.loginButton}
               onPress={() => handleLoginOrRegister(0)}
@@ -226,15 +271,20 @@ export default function LoginScreen() {
             </View>
             <View style={styles.logoContainer}>
               <TouchableOpacity
-                style={styles.logoButton}
+                style={styles.whatsappButton}
                 onPress={() => handleLoginOrRegister(1)}
                 disabled={whatsapploading}
               >
-                <Image
-                  source={require("../../assets/whatsapp.png")}
-                  alt="WhatsApp"
-                  style={styles.whatsappLogo}
-                />
+                <View style={styles.whatsappContent}>
+                  <Image
+                    source={require("../../assets/whatsapp.png")}
+                    alt="whatsapp icon"
+                    style={styles.whatsappIcon}
+                  />
+                  <Text style={styles.whatsappText}>
+                    {whatsapploading ? "Please wait..." : "WhatsApp"}
+                  </Text>
+                </View>
               </TouchableOpacity>
             </View>
             <Text style={styles.footerText}>
@@ -242,7 +292,7 @@ export default function LoginScreen() {
               <Text style={styles.linkText}>Terms of Service</Text> and{" "}
               <Text style={styles.linkText}>Privacy Policy</Text>.
             </Text>
-          </View>
+          </Animated.View>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -265,7 +315,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: "45%",
+    height: "auto",
     backgroundColor: "#fff",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -277,16 +327,32 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  whatsappLogo: {
-    height: 32,
-    width: 32,
-  },
-  whatsappContainer: {
-    flexDirection: "row",
-    gap: 10,
-    justifyContent: "center",
+  whatsappButton: {
+    width: "100%",
+    padding: 20,
+    borderRadius: 30,
+    backgroundColor: "#25D366",
     alignItems: "center",
   },
+
+  whatsappContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  whatsappIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 10,
+  },
+
+  whatsappText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
   input: {
     width: "70%",
     marginTop: 20,
@@ -296,11 +362,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingLeft: 5,
   },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#EAF0FF",
+    borderRadius: 50,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginTop: 5,
+    backgroundColor: "#fff",
+  },
+  prefix: {
+    fontSize: 16,
+    color: "#000",
+    marginRight: 8,
+  },
+
+  mobileInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#000",
+  },
+
   loginButton: {
     width: "100%",
     padding: 20,
     borderRadius: 30,
-    marginTop: 15,
+    marginTop: 20,
     alignItems: "center",
     backgroundColor: "#1D3A76",
   },
@@ -313,7 +402,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     width: "90%",
-    marginVertical: 15,
+    marginVertical: 10,
   },
   divider: {
     flex: 1,

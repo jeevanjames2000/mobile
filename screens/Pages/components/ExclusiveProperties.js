@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef, memo } from "react";
+import React, { useEffect, useState, useCallback, memo } from "react";
 import {
-  Share,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
@@ -8,28 +7,17 @@ import {
   Keyboard,
   View,
   Text,
-  Image,
+  Image
 } from "react-native";
 import {
-  Text as NBText,
-  View as NBView,
-  Actionsheet,
-  useDisclose,
-  Box,
-  Toast,
-  HStack,
+  Text as NBText, HStack
 } from "native-base";
 import { useNavigation } from "@react-navigation/native";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  setIntrestedProperties,
-  setTrendingProjects,
-  setPropertyDetails,
+  setPropertyDetails
 } from "../../../store/slices/propertyDetails";
-import config from "../../../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { Modal, TouchableWithoutFeedback } from "react-native";
 const PropertyCard = memo(

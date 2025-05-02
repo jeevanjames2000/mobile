@@ -1,19 +1,18 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
   StyleSheet,
   SafeAreaView,
   Platform,
   KeyboardAvoidingView,
   BackHandler,
   Alert,
-  ScrollView,
+  ScrollView
 } from "react-native";
 import { StatusBar } from "native-base";
 import HerosSection from "./components/HerosSection";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import FilterTabs from "./components/FilterTabs";
@@ -53,19 +52,22 @@ export default function HomeScreen() {
     return token;
   }
 
-  async function savePushTokenToBackend(user_id, user_name, pushToken) {
+  async function savePushTokenToBackend(user_id, mobile, pushToken) {
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: user_id,
-          user_name: user_name,
-          pushToken: pushToken,
-        }),
-      });
+      const response = await fetch(
+        "https://api.meetowner.in/user/v1/insertToken",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: user_id,
+            mobile: mobile,
+            push_token: pushToken,
+          }),
+        }
+      );
       const result = await response.json();
       if (result.success) {
         // Handle success if needed
@@ -82,15 +84,15 @@ export default function HomeScreen() {
         const userData = JSON.parse(userDataString);
         registerForPushNotificationsAsync().then((token) => {
           if (token) {
-            savePushTokenToBackend(userData?.user_id, userData?.name, token);
+            savePushTokenToBackend(userData?.user_id, userData?.mobile, token);
             AsyncStorage.setItem("pushToken", token);
           }
         });
         Notifications.setNotificationHandler({
           handleNotification: async () => ({
             shouldShowAlert: true,
-            shouldPlaySound: false,
-            shouldSetBadge: false,
+            shouldPlaySound: true,
+            shouldSetBadge: true,
           }),
         });
       }

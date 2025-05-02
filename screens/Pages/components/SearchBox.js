@@ -1,15 +1,8 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   Alert,
   Platform,
 } from "react-native";
@@ -29,12 +22,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
 import * as Location from "expo-location";
-import { debounce } from "lodash";
 import { BackHandler } from "react-native";
 import {
   setCities,
   setDeviceLocation,
-  setPropertyDetails,
 } from "../../../store/slices/propertyDetails";
 import { PropertyTypeIcon } from "./SearchBarComponents/PropertyIcon";
 import { FilterSection } from "./SearchBarComponents/FilterSection";
@@ -46,20 +37,17 @@ import {
   setPropertyIn,
   setSearchData,
   setSubType,
-  setLocation,
   setPropertyFor,
   setCity,
+  setPossesionStatus,
 } from "../../../store/slices/searchSlice";
 import CustomHeaderFilter from "./SearchBarComponents/CustomHeaderFilter";
-
 export default function SearchBox() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { isOpen, onOpen, onClose } = useDisclose();
-  const { tab, property_in, sub_type, bhk, occupancy, location } = useSelector(
-    (state) => state.search,
-    shallowEqual
-  );
+  const { tab, property_in, sub_type, bhk, occupancy, price, location } =
+    useSelector((state) => state.search, shallowEqual);
   const searchData = useSelector((state) => state.search);
   const cities = useSelector((state) => state.property.cities, shallowEqual);
   const [locations, setLocations] = useState([]);
@@ -69,12 +57,12 @@ export default function SearchBox() {
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState(location || "");
   const [selectedPropertyType, setSelectedPropertyType] = useState(
-    tab || "Buy"
+    tab || "Retail Shop"
   );
-
   const [selectedBuildingType, setSelectedBuildingType] = useState(
     property_in || "Residential"
   );
+  const [selectedBudget, setSelectedBudget] = useState(price || "");
   const [selectedSubPropertyType, setSelectedSubPropertyType] = useState(
     sub_type || "Apartment"
   );
@@ -84,7 +72,6 @@ export default function SearchBox() {
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedPossession, setSelectedPossession] = useState(occupancy || "");
   const inputRef = useRef(null);
-
   const mapTabToPropertyFor = (tab) => {
     const mapping = {
       Buy: "Sell",
@@ -94,16 +81,21 @@ export default function SearchBox() {
     };
     return mapping[tab] || "Sell";
   };
-
   useEffect(() => {
     setSelectedPropertyType(tab || "Buy");
     setSelectedBuildingType(property_in || "Residential");
     setSelectedSubPropertyType(sub_type || "Apartment");
+    if (property_in === "Commercial") {
+      setSelectedSubPropertyType(sub_type || "Retail Shop");
+    } else if (tab === "Plot") {
+      setSelectedSubPropertyType("Plot");
+    } else {
+      setSelectedSubPropertyType(sub_type || "Apartment");
+    }
     setSelectedBedrooms(bhk || "");
     setSelectedPossession(occupancy || "");
     setSearchQuery(location || "");
   }, [tab, property_in, sub_type, bhk, occupancy, location]);
-
   const togglePropertyType = (type) => {
     setSelectedPropertyType(type);
     const payload = {
@@ -119,7 +111,7 @@ export default function SearchBox() {
       payload.property_in = "";
     } else if (type === "Commercial") {
       payload.property_in = "Commercial";
-      payload.sub_type = "Office"; // Default to "Office" for Commercial
+      payload.sub_type = "Retail Shop";
     } else if (type === "Buy" || type === "Rent") {
       payload.property_in = "Residential";
       payload.sub_type = "Apartment";
@@ -130,23 +122,27 @@ export default function SearchBox() {
     setSelectedPossession("");
     dispatch(setSearchData(payload));
   };
-
   const toggleBuildingType = (type) => {
     setSelectedBuildingType(type);
     dispatch(setPropertyIn(type));
     if (type === "Commercial") {
-      setSelectedSubPropertyType("Office"); // Default to "Office"
+      const defaultSubType = "Retail Shop";
+      const defaultPossession = "Ready to move";
+      setSelectedSubPropertyType(defaultSubType);
+      dispatch(setSubType(defaultSubType));
+      setSelectedPossession(defaultPossession);
+      dispatch(setOccupancy(defaultPossession));
+      dispatch(setPossesionStatus(defaultPossession));
       setSelectedBedrooms("");
-      dispatch(setSubType("Office"));
       dispatch(setBHK(null));
     } else {
       setSelectedSubPropertyType("Apartment");
       dispatch(setSubType("Apartment"));
+      setSelectedPossession("");
+      dispatch(setOccupancy(""));
+      dispatch(setPossesionStatus(""));
     }
-    setSelectedPossession("");
-    dispatch(setOccupancy(""));
   };
-
   const toggleSubPropertyType = (type) => {
     const validResidentialSubTypes = [
       "Apartment",
@@ -168,7 +164,6 @@ export default function SearchBox() {
       selectedBuildingType === "Commercial"
         ? validCommercialSubTypes
         : validResidentialSubTypes;
-
     if (validSubTypes.includes(type)) {
       setSelectedSubPropertyType(type);
       dispatch(setSubType(type));
@@ -178,7 +173,6 @@ export default function SearchBox() {
       }
     }
   };
-
   const toggleBedroom = (type) => {
     const validBHKs = [
       "1 BHK",
@@ -195,7 +189,6 @@ export default function SearchBox() {
       dispatch(setBHK(type));
     }
   };
-
   const toggleFurnishing = (type) => setSelectedFurnishing(type);
   const togglePostedBy = (type) => setSelectedPostedBy(type);
   const toggleAmenity = (type) =>
@@ -204,19 +197,25 @@ export default function SearchBox() {
         ? prev.filter((item) => item !== type)
         : [...prev, type]
     );
-
+  const Budget = [
+    { label: "Up to 50 Lakhs", value: "Price: Low to High" },
+    { label: "75 Lakhs+", value: "Price: High to Low" },
+  ];
+  const toggleBudget = (value) => {
+    setSelectedBudget(value);
+    dispatch(setSearchData({ price: value }));
+  };
   const togglePossession = (type) => {
     const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
     const validPossessionStatuses = isPlotOrLand
       ? ["Future", "Immediate"]
-      : ["Ready to Move", "Under Construction"];
-
+      : ["Ready to move", "Under Construction"];
     if (validPossessionStatuses.includes(type)) {
       setSelectedPossession(type);
       dispatch(setOccupancy(type));
+      dispatch(setPossesionStatus(type));
     }
   };
-
   useEffect(() => {
     const fetchCities = async () => {
       try {
@@ -234,7 +233,6 @@ export default function SearchBox() {
     fetchCities();
     getUserLocation();
   }, [dispatch, cities.length]);
-
   const getUserLocation = async () => {
     setLoading(true);
     try {
@@ -264,7 +262,6 @@ export default function SearchBox() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     setLocations(cities);
     setFilteredLocations(cities);
@@ -283,7 +280,6 @@ export default function SearchBox() {
       }
     }
   }, [cities, userLocation, dispatch]);
-
   const handleCitySearch = (query) => {
     setSearchQuery(query);
     setFilteredLocations(
@@ -294,14 +290,12 @@ export default function SearchBox() {
           )
     );
   };
-
   const handleCitySelect = (item) => {
     setSelectedLocation(item);
     dispatch(setCity(item.label));
     onClose();
     setSearchQuery("");
   };
-
   const renderItem = ({ item }) => (
     <TouchableOpacity
       onPress={() => handleCitySelect(item)}
@@ -310,7 +304,6 @@ export default function SearchBox() {
       <Text style={styles.fullWidthText}>{item.label}</Text>
     </TouchableOpacity>
   );
-
   useEffect(() => {
     const backAction = () => {
       if (navigation.canGoBack()) {
@@ -329,7 +322,6 @@ export default function SearchBox() {
     );
     return () => backHandler.remove();
   }, [navigation]);
-
   React.useLayoutEffect(() => {
     navigation.setOptions({
       header: () => (
@@ -341,7 +333,6 @@ export default function SearchBox() {
       ),
     });
   }, [navigation, handleClearAll]);
-
   const handleClearAll = () => {
     setSelectedPropertyType("Buy");
     setSelectedBuildingType("Residential");
@@ -354,7 +345,6 @@ export default function SearchBox() {
     setSelectedLocation(null);
     setSearchQuery("");
     setFilteredLocations(locations);
-
     dispatch(
       setSearchData({
         tab: "Buy",
@@ -370,7 +360,6 @@ export default function SearchBox() {
         commercial_subType: "Buy",
       })
     );
-
     Toast.show({
       duration: 1000,
       placement: "top-right",
@@ -383,12 +372,9 @@ export default function SearchBox() {
       },
     });
   };
-
   const handlePropertiesLists = () => {
     navigation.navigate("PropertyList");
   };
-
-  // Define property types based on building type
   const residentialPropertyTypes = [
     "Apartment",
     "Independent Villa",
@@ -405,20 +391,15 @@ export default function SearchBox() {
     "Plot",
     "Others",
   ];
-
-  // Determine which property types to show
   const propertyTypes =
     selectedBuildingType === "Commercial" ||
     selectedPropertyType === "Commercial"
       ? commercialPropertyTypes
       : residentialPropertyTypes;
-
-  // Determine possession statuses
   const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
   const possessionStatuses = isPlotOrLand
     ? ["Future", "Immediate"]
-    : ["Ready to Move", "Under Construction"];
-
+    : ["Ready to move", "Under Construction"];
   return (
     <View style={styles.container}>
       <ScrollView
@@ -471,8 +452,8 @@ export default function SearchBox() {
             <View style={styles.filterOptionsRow}>
               <FilterOption
                 label="Buy"
-                selected={searchData.property_for === "Buy"}
-                onPress={() => dispatch(setPropertyFor("Buy"))}
+                selected={searchData.property_for === "Sell"}
+                onPress={() => dispatch(setPropertyFor("Sell"))}
                 checkmark={true}
               />
               <FilterOption
@@ -484,7 +465,6 @@ export default function SearchBox() {
             </View>
           </FilterSection>
         )}
-
         <FilterSection title="Building Type">
           <View style={styles.filterOptionsRow}>
             <FilterOption
@@ -540,6 +520,18 @@ export default function SearchBox() {
               </View>
             </FilterSection>
           )}
+        <FilterSection title="Budget">
+          <View style={styles.filterOptionsRow}>
+            {Budget.map((item) => (
+              <FilterOption
+                key={item.value}
+                label={item.label}
+                selected={selectedBudget === item.value}
+                onPress={() => toggleBudget(item.value)}
+              />
+            ))}
+          </View>
+        </FilterSection>
         <FilterSection title="Possession Status">
           <View style={styles.filterOptionsRow}>
             {possessionStatuses.map((status) => (
@@ -604,7 +596,6 @@ export default function SearchBox() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

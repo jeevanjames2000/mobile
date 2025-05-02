@@ -1,9 +1,7 @@
 import React, {
   useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
+  useEffect, useMemo,
+  useRef
 } from "react";
 import {
   StyleSheet,
@@ -13,8 +11,6 @@ import {
   Platform,
 } from "react-native";
 import {
-  Icon,
-  Input,
   View,
   HStack,
   Text,
@@ -22,14 +18,13 @@ import {
   useDisclose,
   FlatList,
   KeyboardAvoidingView,
-  Image,
+  Image
 } from "native-base";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import "react-native-get-random-values";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
 import * as Location from "expo-location";
-import { debounce } from "lodash";
 import {
   setCities,
   setDeviceLocation,

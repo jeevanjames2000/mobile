@@ -18,7 +18,6 @@ import { Box, Toast } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import config from "../../../config";
 import { Linking } from "react-native";
 import { Platform } from "react-native";
 import { CommonActions } from "@react-navigation/native";
@@ -255,8 +254,15 @@ export default function Profile() {
       }
     } catch (error) {
       Toast.show({
-        title: "Something went wrong.",
         duration: 1000,
+        placement: "top-right",
+        render: () => {
+          return (
+            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              Something went wrong.
+            </Box>
+          );
+        },
       });
     } finally {
       setLoading(false);
@@ -368,13 +374,7 @@ export default function Profile() {
           <Text style={styles.userName}>{data?.name || "N/A"}</Text>
           <Text style={styles.memberSince}>
             Member since:{" "}
-            {data?.created_date
-              ? new Date(data.created_date).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-              : "N/A"}
+            {data?.created_date ? data.created_date.split("T")[0] : "N/A"}
           </Text>
         </View>
         <TouchableOpacity
@@ -487,7 +487,9 @@ export default function Profile() {
                   <Text style={styles.accordionText}>
                     • Our team will process your request within 48 hours.
                   </Text>
-                  <Text style={{ fontSize: 14 }}>• team@meetowner.in</Text>
+                  <Text style={{ fontSize: 14, paddingBottom: 5 }}>
+                    • team@meetowner.in
+                  </Text>
                 </View>
               </View>
               <TouchableOpacity

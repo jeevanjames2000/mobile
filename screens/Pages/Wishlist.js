@@ -10,20 +10,16 @@ import {
   Share,
 } from "react-native";
 import {
-  useDisclose,
-  Actionsheet,
-  StatusBar,
+  useDisclose, StatusBar,
   View,
   Text,
   FlatList,
   HStack,
   Image,
   Pressable,
-  Spinner,
-  IconButton,
-  VStack,
+  Spinner, VStack,
   Box,
-  Toast,
+  Toast
 } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -31,7 +27,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import config from "../../config";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import axios from "axios";
 import {
   setIntrestedProperties,

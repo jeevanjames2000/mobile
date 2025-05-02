@@ -1,32 +1,20 @@
 import React, { useEffect, useState, useCallback, useRef, memo } from "react";
 import {
-  Share,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
-  Keyboard,
-  View,
+  StyleSheet, View,
   Text,
-  Image,
+  Image
 } from "react-native";
 import {
-  FlatList,
-  HStack,
-  Text as NBText,
-  View as NBView,
-  Actionsheet,
-  useDisclose,
-  Box,
-  Toast,
+  FlatList, Text as NBText
 } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSelector, useDispatch } from "react-redux";
 import { setPropertyDetails } from "../../../store/slices/propertyDetails";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import ShareDetailsModal from "./ShareDetailsModal";
-import { Modal, TouchableWithoutFeedback } from "react-native";
 import ContactActionSheet from "./propertyDetailsComponents/ContactActionSheet";
 const PropertyCard = memo(({ item, onPress, onViewAll, contactNow }) => {
   const property = {
@@ -278,7 +266,7 @@ const styles = StyleSheet.create({
   cardContainer: {
     width: 350,
     borderRadius: 10,
-    overflow: "hidden",
+    // overflow: "hidden",
     backgroundColor: "#fff",
     shadowColor: "#000",
     shadowOffset: {

@@ -5,13 +5,9 @@ import {
   Image,
   TouchableOpacity,
   Linking,
-  Modal,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Share,
+  Modal, Share,
   View,
-  Text,
-  Platform,
+  Text
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import ShareDetailsModal from "./ShareDetailsModal";
 import PropertyHeader from "./propertyHeader";
+import * as Location from "expo-location";
 import { Pressable } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import WhatsAppIcon from "../../../assets/propertyicons/whatsapp.png";
@@ -188,42 +185,57 @@ export default function PropertyDetails({ navigation }) {
       setFacilities(data?.property_details?.facilities);
     } catch (error) {}
   };
+  const defaultLocation = {
+    latitude: 17.385044,
+    longitude: 78.486671,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  };
   const getCoordinatesFromAddress = async (address) => {
     try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json`,
-        {
-          params: {
-            address: address,
-            key: "AIzaSyBmei9lRUUfJI-kLIPNBoc2SxEkwhKHyvU",
-          },
-        }
-      );
-      if (response?.data?.status === "OK" && response.data.results.length > 0) {
-        const { lat, lng } = response.data.results[0].geometry.location;
-        const initialRegion = {
-          latitude: lat,
-          longitude: lng,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        };
-        setLocation(initialRegion);
-        setRegion(initialRegion);
-      } else {
-        setLocation({
-          latitude: 17.385044,
-          longitude: 78.486671,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Location permissions are required to geocode the address."
+        );
+        setLocation(defaultLocation);
+        setRegion(defaultLocation);
+        setErrorMsg("Location permissions denied.");
+        return;
+      }
+
+      // Geocode the address using Expo Location
+      if (address) {
+        const geocoded = await Location.geocodeAsync(address, {
+          accuracy: Location.Accuracy.Balanced,
         });
+
+        if (geocoded && geocoded.length > 0) {
+          const { latitude, longitude } = geocoded[0];
+          const initialRegion = {
+            latitude,
+            longitude,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          };
+          setLocation(initialRegion);
+          setRegion(initialRegion);
+        } else {
+          setLocation(defaultLocation);
+          setRegion(defaultLocation);
+          setErrorMsg("Unable to geocode the address.");
+        }
+      } else {
+        setLocation(defaultLocation);
+        setRegion(defaultLocation);
+        setErrorMsg("No address provided.");
       }
     } catch (error) {
-      setLocation({
-        latitude: 17.385044,
-        longitude: 78.486671,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      });
+      console.error("Error geocoding address:", error);
+      setLocation(defaultLocation);
+      setRegion(defaultLocation);
+      setErrorMsg("Error geocoding address.");
     }
   };
 
@@ -237,9 +249,10 @@ export default function PropertyDetails({ navigation }) {
     if (response.status === 200) {
       setOwner(sellerdata);
     }
+    return sellerdata;
   };
   const handleAPI = async () => {
-    await getOwnerDetails();
+    const owner = await getOwnerDetails(selectedPropertyId);
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
@@ -307,9 +320,10 @@ export default function PropertyDetails({ navigation }) {
   const handleWhatsappChat = useCallback(
     async (property) => {
       try {
-        await getOwnerDetails(property);
+        const owner = await getOwnerDetails(property);
         const ownerPhone = owner?.mobile;
-        if (!owner) {
+
+        if (!owner || !ownerPhone) {
           Toast.show({
             placement: "top-right",
             render: () => (
@@ -320,31 +334,39 @@ export default function PropertyDetails({ navigation }) {
           });
           return;
         }
-        const whatsappStoreLink =
-          Platform.OS === "android"
-            ? "https://play.google.com/store/apps/details?id=com.whatsapp"
-            : "https://apps.apple.com/us/app/whatsapp-messenger/id310633997";
-        const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
+
         const ownerName = owner?.name || "Owner";
+        const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
         const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
         const encodedMessage = encodeURIComponent(message);
+
         const normalizedPhone = ownerPhone.startsWith("+")
           ? ownerPhone.replace(/\D/g, "")
           : `91${ownerPhone.replace(/\D/g, "")}`;
-        const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
-        const supported = await Linking.canOpenURL(whatsappUrl);
-        if (supported) {
-          await Linking.openURL(whatsappUrl);
+
+        const whatsappURL = `whatsapp://send?phone=${normalizedPhone}&text=${encodedMessage}`;
+        const whatsappBusinessURL = `whatsapp-business://send?phone=${normalizedPhone}&text=${encodedMessage}`;
+        const waWebFallback = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
+
+        const isWhatsappAvailable = await Linking.canOpenURL(whatsappURL);
+        const isWhatsappBusinessAvailable = await Linking.canOpenURL(
+          whatsappBusinessURL
+        );
+
+        if (isWhatsappAvailable) {
+          await Linking.openURL(whatsappURL);
+        } else if (isWhatsappBusinessAvailable) {
+          await Linking.openURL(whatsappBusinessURL);
         } else {
           Toast.show({
             placement: "top-right",
             render: () => (
               <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-                WhatsApp is not installed. Redirecting to app store...
+                WhatsApp is not installed. Redirecting to browser...
               </Box>
             ),
           });
-          await Linking.openURL(whatsappStoreLink);
+          await Linking.openURL(waWebFallback);
         }
       } catch (error) {
         console.error("Error opening WhatsApp:", error);
@@ -358,7 +380,7 @@ export default function PropertyDetails({ navigation }) {
         });
       }
     },
-    [owner, userInfo, getOwnerDetails]
+    [getOwnerDetails, userInfo]
   );
   const memoizedPhotos = useMemo(() => photos, [photos]);
   const SkeletonLoader = () => (
@@ -449,8 +471,9 @@ export default function PropertyDetails({ navigation }) {
               </Text>
             )}
 
-            <Text style={styles.propertyname}>
-              {property.property_name} <Text>/ {property.location_id}</Text>
+            <Text style={styles.propertyname} numberOfLines={1}>
+              {property.property_name}{" "}
+              <Text numberOfLines={1}>/ {property.location_id}</Text>
             </Text>
           </View>
           <Text style={styles.overview}>Pricing</Text>
@@ -623,14 +646,18 @@ export default function PropertyDetails({ navigation }) {
               showsScale={true}
               loadingEnabled={true}
             >
-              <Marker
-                coordinate={{
-                  latitude: location?.latitude,
-                  longitude: location?.longitude,
-                }}
-                title="Location"
-                description="This is your selected location"
-              />
+              {location && (
+                <Marker
+                  coordinate={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }}
+                  title={property?.google_address || "Location"}
+                  description={
+                    property?.google_address || "This is your selected location"
+                  }
+                />
+              )}
             </MapView>
           ) : (
             <Text fontSize={16} fontWeight={"bold"} textAlign={"center"}>
@@ -638,30 +665,6 @@ export default function PropertyDetails({ navigation }) {
             </Text>
           )}
         </View>
-        {/* <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'flex-end',
-            paddingHorizontal: 10,
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderWidth: 0.5,
-              backgroundColor: '#1D3A76',
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-              borderRadius: 30,
-            }}
-            onPress={handleViewInMaps}
-          >
-            <Text style={{ color: '#fff', fontSize: 12, fontFamily: 'PoppinsSemiBold' }}>
-              View in Maps
-            </Text>
-          </TouchableOpacity>
-        </View> */}
       </ScrollView>
       <View style={styles.ctaContainer}>
         <TouchableOpacity
@@ -901,6 +904,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 0,
+
     elevation: 1,
   },
   ctaButton: {
@@ -910,6 +914,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "48%",
     alignItems: "center",
+    marginBottom: 5,
   },
   chatButton: {
     backgroundColor: "#FFFFFF",
@@ -919,6 +924,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderColor: "green",
     borderWidth: 1,
+    marginBottom: 5,
   },
   buttonsText: {
     color: "#fff",

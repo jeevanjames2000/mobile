@@ -42,7 +42,7 @@ export default function Profile() {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permissionResult.granted === false) {
-      Alert.alert("Permission denied!", "Camera roll access is required.");
+      Alert.alert("Permission denied!", "Camera access is required.");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({

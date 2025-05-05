@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, memo } from "react";
 import {
-  Share,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
@@ -10,35 +9,18 @@ import {
   Text,
   Image,
 } from "react-native";
-import {
-  FlatList,
-  HStack,
-  Text as NBText,
-  View as NBView,
-  Actionsheet,
-  useDisclose,
-  Box,
-  Toast,
-} from "native-base";
+import { FlatList, Text as NBText } from "native-base";
 import { useNavigation } from "@react-navigation/native";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  setIntrestedProperties,
-  setTrendingProjects,
-  setPropertyDetails,
-} from "../../../store/slices/propertyDetails";
-import config from "../../../config";
+import { setPropertyDetails } from "../../../store/slices/propertyDetails";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { Modal, TouchableWithoutFeedback } from "react-native";
-import bhk from "../../../assets/propertyicons/bhk.png";
+import bhk from "../../../assets/propertyicons/property.png";
 import direction from "../../../assets/propertyicons/direction.png";
 import location from "../../../assets/propertyicons/location.png";
 import parking from "../../../assets/propertyicons/parking.png";
-import shower from "../../../assets/propertyicons/shower.png";
-import yards from "../../../assets/propertyicons/yards.png";
+import shower from "../../../assets/propertyicons/bath.png";
 const PropertyCard = memo(({ item, onPress }) => {
   const property = {
     image: `https://api.meetowner.in/uploads/${
@@ -419,7 +401,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#fff",
     marginLeft: 4,
-    marginTop:3,
+    marginTop: 3,
     fontFamily: "PoppinsSemiBold",
   },
   highlightedDirectionIcon: {

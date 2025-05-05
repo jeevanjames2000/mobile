@@ -6,7 +6,7 @@ import {
   KeyboardAvoidingView,
   BackHandler,
   Alert,
-  ScrollView
+  ScrollView,
 } from "react-native";
 import { StatusBar } from "native-base";
 import HerosSection from "./components/HerosSection";
@@ -70,11 +70,8 @@ export default function HomeScreen() {
       );
       const result = await response.json();
       if (result.success) {
-        // Handle success if needed
       }
-    } catch (error) {
-      console.error("Error saving push token:", error);
-    }
+    } catch (error) {}
   }
 
   useEffect(() => {

@@ -79,6 +79,7 @@ const SearchBarProperty = ({
     price,
     plot_subType,
     budget,
+    property_cost,
   } = useSelector((state) => state.search);
   const data = useSelector((state) => state.search);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery || "");
@@ -102,14 +103,15 @@ const SearchBarProperty = ({
   const [selectedPossession, setSelectedPossession] = useState(
     possession_status || ""
   );
-  const [selectedBudget, setSelectedBudget] = useState(budget || "");
+  const [selectedBudget, setSelectedBudget] = useState(property_cost || "");
   const Budget = [
-    { label: "Up to 50 Lakhs", value: "Price: Low to High" },
-    { label: "75 Lakhs+", value: "Price: High to Low" },
+    { label: "Up to 50 Lakhs", value: "50" },
+    { label: "50-75 Lakhs", value: "50-75" },
+    { label: "75 Lakhs+", value: "75+" },
   ];
   const toggleBudget = (value) => {
     setSelectedBudget(value);
-    dispatch(setSearchData({ price: value }));
+    dispatch(setSearchData({ property_cost: value }));
   };
   const [selectedSort, setSelectedSort] = useState(price || "Relevance");
   const sortOptions = [

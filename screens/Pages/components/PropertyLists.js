@@ -322,6 +322,7 @@ export default function PropertyLists({ route }) {
     possession_status,
     price,
     city,
+    property_cost,
   } = useSelector((state) => state.search);
   const [searchQuery, setSearchQuery] = useState(location || "");
   const [userDetails, setUserDetails] = useState(null);
@@ -336,7 +337,7 @@ export default function PropertyLists({ route }) {
     sub_type: sub_type || "Apartment",
     search: location || "",
     bedrooms: bhk || "",
-    property_cost: "",
+    property_cost: property_cost || "",
     priceFilter: price || "Relevance",
     occupancy: occupancy || "",
     possession_status: possession_status || "",
@@ -379,7 +380,7 @@ export default function PropertyLists({ route }) {
       possession_status: possession_status || "",
       search: location || "",
       priceFilter: price || "Relevance",
-      property_cost: "",
+      property_cost: property_cost || "",
       property_status: 1,
     };
     setFilters(updatedFilters);
@@ -417,9 +418,7 @@ export default function PropertyLists({ route }) {
             ? appliedFilters.bedrooms.replace(" BHK", "")
             : "",
           property_cost: appliedFilters.property_cost || "",
-          priceFilter: encodeURIComponent(
-            mapPriceFilterToApiValue(appliedFilters.priceFilter)
-          ),
+          priceFilter: mapPriceFilterToApiValue(appliedFilters.priceFilter),
           ...(isPlotOrLand
             ? { possession_status: appliedFilters.possession_status || "" }
             : { occupancy: appliedFilters.occupancy || "" }),

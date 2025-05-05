@@ -20,11 +20,11 @@ import {
 import config from "../../../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import bhk from "../../../assets/propertyicons/property.png";
 import direction from "../../../assets/propertyicons/direction.png";
 import location from "../../../assets/propertyicons/location.png";
 import parking from "../../../assets/propertyicons/parking.png";
-import shower from "../../../assets/propertyicons/shower.png";
-import bhk from "../../../assets/propertyicons/bhk.png";
+import shower from "../../../assets/propertyicons/bath.png";
 import ContactActionSheet from "./propertyDetailsComponents/ContactActionSheet";
 import SkeletonLoader from "../../../utils/SkeletonLoader";
 const PropertyCard = memo(

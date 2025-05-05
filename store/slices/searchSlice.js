@@ -8,6 +8,7 @@ const searchSlice = createSlice({
     property_in: "",
     bhk: null,
     budget: "",
+    property_cost: "",
     sub_type: "Apartment",
     plot_subType: "Sell",
     commercial_subType: "Buy",
@@ -81,6 +82,9 @@ const searchSlice = createSlice({
     setCommercialSubType: (state, action) => {
       state.commercial_subType = action.payload;
     },
+    setPropertyCost: (state, action) => {
+      state.property_cost = action.payload;
+    },
   },
 });
 export const {
@@ -102,5 +106,6 @@ export const {
   setSearchData,
   setPlotSubType,
   setCommercialSubType,
+  setPropertyCost,
 } = searchSlice.actions;
 export default searchSlice.reducer;

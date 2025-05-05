@@ -13,7 +13,6 @@ import {
 import { HStack, Text, Icon } from "native-base";
 import HomeScreen from "../Pages/HomeScreen";
 import Wishlist from "../Pages/Wishlist";
-import Shorts from "../Pages/Shorts";
 import Support from "../Pages/Support";
 import Profile from "../Pages/components/Profile";
 import { useNavigation } from "@react-navigation/native";
@@ -21,7 +20,6 @@ import Properties from "../Pages/components/LatestProperties";
 import ShortSoon from "../Pages/ShortSoon";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-
 
 const HomeHeader = () => {
   const navigation = useNavigation();
@@ -51,20 +49,11 @@ const HomeHeader = () => {
 const CustomHeader = ({ title, icon, routeName }) => {
   const navigation = useNavigation();
   return (
-    <HStack
-      style={styles.header}
-      justifyContent="start"
-      alignItems="center"
-      
-
-    >
+    <HStack style={styles.header} justifyContent="start" alignItems="center">
       <Pressable onPress={() => navigation.goBack()}>
         <Icon as={Ionicons} name="chevron-back-outline" size={6} color="#000" />
       </Pressable>
-      <Text style={styles.title}>
-        {title}
-      </Text>
-      
+      <Text style={styles.title}>{title}</Text>
     </HStack>
   );
 };
@@ -217,7 +206,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     marginLeft: 10,
-    marginTop:2,
+    marginTop: 2,
     color: "#000",
     fontFamily: "PoppinsSemiBold",
   },

@@ -46,8 +46,16 @@ export default function SearchBox() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { isOpen, onOpen, onClose } = useDisclose();
-  const { tab, property_in, sub_type, bhk, occupancy, price, location } =
-    useSelector((state) => state.search, shallowEqual);
+  const {
+    tab,
+    property_in,
+    sub_type,
+    bhk,
+    occupancy,
+    price,
+    location,
+    property_cost,
+  } = useSelector((state) => state.search, shallowEqual);
   const searchData = useSelector((state) => state.search);
   const cities = useSelector((state) => state.property.cities, shallowEqual);
   const [locations, setLocations] = useState([]);
@@ -62,7 +70,7 @@ export default function SearchBox() {
   const [selectedBuildingType, setSelectedBuildingType] = useState(
     property_in || "Residential"
   );
-  const [selectedBudget, setSelectedBudget] = useState(price || "");
+  const [selectedBudget, setSelectedBudget] = useState(property_cost || "");
   const [selectedSubPropertyType, setSelectedSubPropertyType] = useState(
     sub_type || "Apartment"
   );
@@ -198,12 +206,13 @@ export default function SearchBox() {
         : [...prev, type]
     );
   const Budget = [
-    { label: "Up to 50 Lakhs", value: "Price: Low to High" },
-    { label: "75 Lakhs+", value: "Price: High to Low" },
+    { label: "Up to 50 Lakhs", value: "50" },
+    { label: "50-75 Lakhs", value: "50-75" },
+    { label: "75 Lakhs+", value: "75+" },
   ];
   const toggleBudget = (value) => {
     setSelectedBudget(value);
-    dispatch(setSearchData({ price: value }));
+    dispatch(setSearchData({ property_cost: value }));
   };
   const togglePossession = (type) => {
     const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);

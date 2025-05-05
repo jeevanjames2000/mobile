@@ -1,8 +1,4 @@
-import React, {
-  useState,
-  useEffect, useMemo,
-  useRef
-} from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
@@ -18,7 +14,7 @@ import {
   useDisclose,
   FlatList,
   KeyboardAvoidingView,
-  Image
+  Image,
 } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
 import "react-native-get-random-values";
@@ -113,7 +109,6 @@ export default function HerosSection({ setSelectedCity }) {
         dispatch(setDeviceLocation(city));
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to get your location.");
       dispatch(setUserLocation("Unknown City"));
     }
   };

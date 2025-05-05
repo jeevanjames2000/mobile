@@ -77,9 +77,7 @@ function AppContent({ expoPushToken, setNotification }) {
           const userData = JSON.parse(userDataString);
           setUserData(userData);
         }
-      } catch (error) {
-        console.error("Error fetching userData:", error);
-      }
+      } catch (error) {}
     };
     getData();
   }, [dispatch]);
@@ -98,9 +96,7 @@ function AppContent({ expoPushToken, setNotification }) {
       })
         .then((res) => res.json())
         .then((data) => {})
-        .catch((error) => {
-          console.error("Error inserting token:", error);
-        });
+        .catch((error) => {});
     }
   }, [expoPushToken, userData]);
   return <MainNav />;
@@ -121,7 +117,6 @@ async function registerForPushNotificationsAsync() {
     finalStatus = status;
   }
   if (finalStatus !== "granted") {
-    Alert.alert("Error", "Failed to get push token for push notifications!");
     return;
   }
   try {
@@ -130,10 +125,7 @@ async function registerForPushNotificationsAsync() {
         projectId: "871b5e55-6c02-430a-9cc9-6d6fbb44af89",
       })
     ).data;
-  } catch (error) {
-    console.error("Error getting push token:", error);
-    Alert.alert("Error", "Failed to retrieve push token.");
-  }
+  } catch (error) {}
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
       name: "default",

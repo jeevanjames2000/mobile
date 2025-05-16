@@ -39,6 +39,7 @@ import FilterBar from "./propertyDetailsComponents/FilterBar";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { setLocation } from "../../../store/slices/searchSlice";
 import { debounce } from "lodash";
+
 const userTypeMap = {
   3: "Builder",
   4: "Agent",
@@ -388,7 +389,16 @@ export default function PropertyLists({ route }) {
     setPage(1);
     setProperties([]);
     fetchProperties(true, updatedFilters);
-  }, [tab, property_in, sub_type, bhk, occupancy, location, price,property_cost]);
+  }, [
+    tab,
+    property_in,
+    sub_type,
+    bhk,
+    occupancy,
+    location,
+    price,
+    property_cost,
+  ]);
   const fetchProperties = useCallback(
     async (reset = false, appliedFilters = filters) => {
       if (!hasMore && !reset) return;
@@ -417,7 +427,7 @@ export default function PropertyLists({ route }) {
           bedrooms: appliedFilters.bedrooms
             ? appliedFilters.bedrooms.replace(" BHK", "")
             : "",
-          property_cost: appliedFilters.property_cost  || "",
+          property_cost: appliedFilters.property_cost || "",
           priceFilter: mapPriceFilterToApiValue(appliedFilters.priceFilter),
           ...(isPlotOrLand
             ? { possession_status: appliedFilters.possession_status || "" }

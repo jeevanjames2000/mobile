@@ -135,7 +135,7 @@ export default function HomeScreen() {
       return () => backHandler.remove();
     }, [exitCount])
   );
-  const componentBackgroundColor = "#fff";
+  const componentBackgroundColor = "transparent";
 
   return (
     <KeyboardAvoidingView

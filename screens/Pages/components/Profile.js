@@ -15,7 +15,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { Box, Toast } from "native-base";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { Linking } from "react-native";
@@ -59,7 +59,6 @@ export default function Profile() {
       setImageModalVisible(true);
     }
   };
-  //logout api
   const performLogout = async () => {
     setLoading(true);
     await AsyncStorage.clear();
@@ -170,9 +169,11 @@ export default function Profile() {
     );
     return () => backHandler.remove();
   }, []);
-  useEffect(() => {
-    fetchProfileDetails();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchProfileDetails();
+    }, [])
+  );
   const handleLogout = () => {
     Alert.alert(
       "Confirm Logout",

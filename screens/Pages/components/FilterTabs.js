@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import { setSearchData } from "../../../store/slices/searchSlice";
 import { useDispatch, useSelector } from "react-redux";
 const tabs = [
@@ -72,7 +78,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     paddingHorizontal: 10,
-    marginTop: 15,
+    marginTop: Platform.OS === "ios" ? 0 : 15,
     marginBottom: 15,
   },
   tab: {

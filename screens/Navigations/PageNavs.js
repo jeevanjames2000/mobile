@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,97 +15,117 @@ import HomeScreen from "../Pages/HomeScreen";
 import Wishlist from "../Pages/Wishlist";
 import Support from "../Pages/Support";
 import Profile from "../Pages/components/Profile";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import Properties from "../Pages/components/LatestProperties";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Shorts from "../Pages/Shorts";
+import axios from "axios";
+import { SafeAreaView } from "react-native-safe-area-context";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 const HomeHeader = () => {
   const navigation = useNavigation();
-  const [photo, setPhoto] = useState(null); 
-  const [photoError, setPhotoError] = useState(false); 
+  const [photo, setPhoto] = useState(null);
+  const [photoError, setPhotoError] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchProfilePhoto = async () => {
-      try {
-       
-        const userDetailsData = await AsyncStorage.getItem("userdetails");
-        const parsedUserDetails = userDetailsData
-          ? JSON.parse(userDetailsData)
-          : null;
-        if (parsedUserDetails && parsedUserDetails.photo) {
-          setPhoto(parsedUserDetails.photo);
-          setIsImageLoading(true); 
-          return;
-        }
+  useFocusEffect(
+    useCallback(() => {
+      const fetchProfilePhoto = async () => {
+        try {
+          setIsImageLoading(true);
 
-       
-        const cachedData = await AsyncStorage.getItem("profileData");
-        if (cachedData) {
-          const { data: cachedProfile } = JSON.parse(cachedData);
-          if (cachedProfile.photo) {
-            setPhoto(cachedProfile.photo);
-            setIsImageLoading(true); 
+          const userDetailsData = await AsyncStorage.getItem("userdetails");
+          const parsedUserDetails = userDetailsData
+            ? JSON.parse(userDetailsData)
+            : null;
+
+          if (!parsedUserDetails?.user_id) {
+            setPhotoError(true);
+            Toast.show({
+              type: "error",
+              text1: "Error",
+              text2: "User ID not found.",
+            });
+            return;
           }
+
+          const response = await axios.get(
+            `https://api.meetowner.in/user/v1/getProfile?user_id=${parsedUserDetails.user_id}`
+          );
+
+          const fetchedData = response.data;
+
+          if (fetchedData && fetchedData.photo) {
+            setPhoto(fetchedData.photo);
+          } else {
+            setPhoto(null);
+            setPhotoError(true);
+          }
+        } catch (error) {
+          console.error("Error fetching profile photo:", error);
+          setPhotoError(true);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Failed to fetch profile image.",
+          });
+        } finally {
+          setIsImageLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching profile photo:", error);
-        setPhotoError(true);
-        setIsImageLoading(false); 
-      }
-    };
+      };
 
-    fetchProfilePhoto();
-  }, []);
+      fetchProfilePhoto();
+    }, [])
+  );
 
-  
   const getProfileImageSource = () => {
     if (photoError || !photo) {
-      return null; 
+      return null;
     }
     return { uri: `https://api.meetowner.in/${photo}` };
   };
 
   return (
-    <HStack
-      style={styles.headerContainer}
-      justifyContent="space-between"
-      alignItems="center"
-    >
-      <Image
-        source={require("../../assets/Untitled-22.png")}
-        alt="Meet Owner Logo"
-        style={styles.logo}
-        resizeMode="contain"
-      />
-      <Pressable onPress={() => navigation.navigate("Profile")}>
-        {getProfileImageSource() && !photoError && !isImageLoading ? (
-          <Image
-            source={getProfileImageSource()}
-            alt="Profile Photo"
-            style={styles.profileImage}
-            onLoadStart={() => setIsImageLoading(true)} 
-            onLoad={() => setIsImageLoading(false)}
-            onError={() => {
-              setPhotoError(true);
-              setIsImageLoading(false); 
-            }}
-            resizeMode="cover"
-          />
-        ) : (
-          <Icon
-            as={Ionicons}
-            name="person-circle-outline"
-            size={38}
-            color="#000"
-          />
-        )}
-      </Pressable>
-    </HStack>
+    <SafeAreaView style={styles.safeArea}>
+      <HStack
+        style={styles.headerContainer}
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <Image
+          source={require("../../assets/Untitled-22.png")}
+          alt="Meet Owner Logo"
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Pressable onPress={() => navigation.navigate("Profile")}>
+          {getProfileImageSource() ? (
+            <Image
+              source={getProfileImageSource()}
+              alt="Profile Photo"
+              style={styles.profileImage}
+              onLoadStart={() => setIsImageLoading(true)}
+              onLoad={() => setIsImageLoading(false)}
+              onError={() => {
+                setPhotoError(true);
+                setIsImageLoading(false);
+              }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Icon
+              as={Ionicons}
+              name="person-circle-outline"
+              size={38}
+              color="#000"
+            />
+          )}
+        </Pressable>
+      </HStack>
+    </SafeAreaView>
   );
 };
 
@@ -128,20 +148,25 @@ const CustomHeaderShorts = ({ title, icon, routeName }) => {
     <HStack
       style={[
         styles.headerShots,
-        routeName === 'Shorts' ? styles.transparentHeaderShots : null,
+        routeName === "Shorts" ? styles.transparentHeaderShots : null,
       ]}
       justifyContent="start"
       alignItems="center"
     >
-       <StatusBar
-          backgroundColor="transparent"
-          translucent={true}
-          barStyle="light-content"
-        />
       <Pressable onPress={() => navigation.goBack()}>
-        <Icon as={Ionicons} name="chevron-back-outline" size={6} color={routeName === 'Shorts' ? '#FFF' : '#000'} />
+        <Icon
+          as={Ionicons}
+          name="chevron-back-outline"
+          size={6}
+          color={routeName === "Shorts" ? "#FFF" : "#000"}
+        />
       </Pressable>
-      <Text style={[styles.titleShots, routeName === 'Shorts' ? styles.lightTextShots : null]}>
+      <Text
+        style={[
+          styles.titleShots,
+          routeName === "Shorts" ? styles.lightTextShots : null,
+        ]}
+      >
         {title}
       </Text>
     </HStack>
@@ -233,6 +258,9 @@ export default function PageNavs() {
   );
 }
 const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: "#fff",
+  },
   tabBar: {
     position: "absolute",
     bottom: Platform.select({ ios: 20, android: 5 }),
@@ -276,11 +304,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerContainer: {
-    paddingBottom: 10,
-    paddingTop:  50 ,
+    paddingBottom: Platform.OS === "ios" ? 0 : 10,
+    paddingTop: 10,
     paddingHorizontal: 18,
     backgroundColor: "#fff",
-   
   },
   logo: {
     width: 120,
@@ -297,31 +324,30 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 50 : 20,
     paddingHorizontal: 18,
     backgroundColor: "#fff",
-   
   },
-  headerShots:{
-     paddingBottom: 10,
-    paddingTop: Platform.OS === "ios" ? 20 : 60,
+  headerShots: {
+    paddingBottom: 10,
+    paddingTop: Platform.OS === "ios" ? 20 : 20,
     paddingHorizontal: 18,
     backgroundColor: "#f5f5f5",
   },
-  transparentHeaderShots:{
-     position: "absolute",
+  transparentHeaderShots: {
+    position: "absolute",
     top: Platform.OS === "ios" ? 50 : 0,
     left: 0,
     right: 0,
     zIndex: 10,
-    paddingHorizontal: 18,
+    paddingHorizontal: 5,
     backgroundColor: "rgba(255, 255, 255, 0)",
   },
-  lightTextShots:{
-     color: '#FFF',
+  lightTextShots: {
+    color: "#FFF",
   },
-  titleShots:{
+  titleShots: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#000', // Default text color
-    marginLeft: 10,
+    fontWeight: "600",
+    color: "#000", // Default text color
+    marginLeft: 2,
   },
 
   title: {
@@ -331,7 +357,7 @@ const styles = StyleSheet.create({
     color: "#000",
     fontFamily: "PoppinsSemiBold",
   },
-    profileImage: {
+  profileImage: {
     width: 38,
     height: 38,
     borderRadius: 19, // Circular image

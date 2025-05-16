@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet, View,
   Text,
-  Image
+  Image,
+  Platform
 } from "react-native";
 import {
   FlatList, Text as NBText
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 6,
     },
-    shadowOpacity: 0.25,
+    shadowOpacity: Platform.OS !== 'ios' ? 0.25 : 0.05,
     shadowRadius: 10,
     elevation: 1,
   },

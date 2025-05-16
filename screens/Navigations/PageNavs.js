@@ -10,19 +10,66 @@ import {
   Pressable,
   Image,
 } from "react-native";
-import { HStack, Text, Icon } from "native-base";
+import { HStack, Text, Icon, StatusBar } from "native-base";
 import HomeScreen from "../Pages/HomeScreen";
 import Wishlist from "../Pages/Wishlist";
 import Support from "../Pages/Support";
 import Profile from "../Pages/components/Profile";
 import { useNavigation } from "@react-navigation/native";
 import Properties from "../Pages/components/LatestProperties";
-import ShortSoon from "../Pages/ShortSoon";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import Shorts from "../Pages/Shorts";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 const HomeHeader = () => {
   const navigation = useNavigation();
+  const [photo, setPhoto] = useState(null); 
+  const [photoError, setPhotoError] = useState(false); 
+  const [isImageLoading, setIsImageLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchProfilePhoto = async () => {
+      try {
+       
+        const userDetailsData = await AsyncStorage.getItem("userdetails");
+        const parsedUserDetails = userDetailsData
+          ? JSON.parse(userDetailsData)
+          : null;
+        if (parsedUserDetails && parsedUserDetails.photo) {
+          setPhoto(parsedUserDetails.photo);
+          setIsImageLoading(true); 
+          return;
+        }
+
+       
+        const cachedData = await AsyncStorage.getItem("profileData");
+        if (cachedData) {
+          const { data: cachedProfile } = JSON.parse(cachedData);
+          if (cachedProfile.photo) {
+            setPhoto(cachedProfile.photo);
+            setIsImageLoading(true); 
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching profile photo:", error);
+        setPhotoError(true);
+        setIsImageLoading(false); 
+      }
+    };
+
+    fetchProfilePhoto();
+  }, []);
+
+  
+  const getProfileImageSource = () => {
+    if (photoError || !photo) {
+      return null; 
+    }
+    return { uri: `https://api.meetowner.in/${photo}` };
+  };
+
   return (
     <HStack
       style={styles.headerContainer}
@@ -36,16 +83,32 @@ const HomeHeader = () => {
         resizeMode="contain"
       />
       <Pressable onPress={() => navigation.navigate("Profile")}>
-        <Icon
-          as={Ionicons}
-          name="person-circle-outline"
-          size={38}
-          color="#000"
-        />
+        {getProfileImageSource() && !photoError && !isImageLoading ? (
+          <Image
+            source={getProfileImageSource()}
+            alt="Profile Photo"
+            style={styles.profileImage}
+            onLoadStart={() => setIsImageLoading(true)} 
+            onLoad={() => setIsImageLoading(false)}
+            onError={() => {
+              setPhotoError(true);
+              setIsImageLoading(false); 
+            }}
+            resizeMode="cover"
+          />
+        ) : (
+          <Icon
+            as={Ionicons}
+            name="person-circle-outline"
+            size={38}
+            color="#000"
+          />
+        )}
       </Pressable>
     </HStack>
   );
 };
+
 const CustomHeader = ({ title, icon, routeName }) => {
   const navigation = useNavigation();
   return (
@@ -54,6 +117,33 @@ const CustomHeader = ({ title, icon, routeName }) => {
         <Icon as={Ionicons} name="chevron-back-outline" size={6} color="#000" />
       </Pressable>
       <Text style={styles.title}>{title}</Text>
+    </HStack>
+  );
+};
+
+const CustomHeaderShorts = ({ title, icon, routeName }) => {
+  const navigation = useNavigation();
+
+  return (
+    <HStack
+      style={[
+        styles.headerShots,
+        routeName === 'Shorts' ? styles.transparentHeaderShots : null,
+      ]}
+      justifyContent="start"
+      alignItems="center"
+    >
+       <StatusBar
+          backgroundColor="transparent"
+          translucent={true}
+          barStyle="light-content"
+        />
+      <Pressable onPress={() => navigation.goBack()}>
+        <Icon as={Ionicons} name="chevron-back-outline" size={6} color={routeName === 'Shorts' ? '#FFF' : '#000'} />
+      </Pressable>
+      <Text style={[styles.titleShots, routeName === 'Shorts' ? styles.lightTextShots : null]}>
+        {title}
+      </Text>
     </HStack>
   );
 };
@@ -86,7 +176,7 @@ function BottomTabs() {
               return <CustomHeader title="Wishlist" />;
             case "Shorts":
               return (
-                <CustomHeader
+                <CustomHeaderShorts
                   title="Shorts"
                   icon="heart-outline"
                   routeName="Shorts"
@@ -125,10 +215,10 @@ function BottomTabs() {
       <Tab.Screen name="Wishlist" component={Wishlist} />
       <Tab.Screen
         name="Shorts"
-        component={ShortSoon}
-        // options={{
-        //   tabBarStyle: { display: "none" },
-        // }}
+        component={Shorts}
+        options={{
+          tabBarStyle: { display: "none" },
+        }}
       />
       <Tab.Screen name="Support" component={Support} />
     </Tab.Navigator>
@@ -187,11 +277,10 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     paddingBottom: 10,
-    paddingTop: Platform.OS === "ios" ? 50 : 20,
+    paddingTop:  50 ,
     paddingHorizontal: 18,
     backgroundColor: "#fff",
-    // borderBottomWidth: 1,
-    // borderBottomColor: "#ddd",
+   
   },
   logo: {
     width: 120,
@@ -203,11 +292,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     backgroundColor: "#f5f5f5",
   },
+  headerContainerShots: {
+    paddingBottom: 10,
+    paddingTop: Platform.OS === "ios" ? 50 : 20,
+    paddingHorizontal: 18,
+    backgroundColor: "#fff",
+   
+  },
+  headerShots:{
+     paddingBottom: 10,
+    paddingTop: Platform.OS === "ios" ? 20 : 60,
+    paddingHorizontal: 18,
+    backgroundColor: "#f5f5f5",
+  },
+  transparentHeaderShots:{
+     position: "absolute",
+    top: Platform.OS === "ios" ? 50 : 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingHorizontal: 18,
+    backgroundColor: "rgba(255, 255, 255, 0)",
+  },
+  lightTextShots:{
+     color: '#FFF',
+  },
+  titleShots:{
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000', // Default text color
+    marginLeft: 10,
+  },
+
   title: {
     fontSize: 15,
     marginLeft: 10,
     marginTop: 2,
     color: "#000",
     fontFamily: "PoppinsSemiBold",
+  },
+    profileImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19, // Circular image
   },
 });

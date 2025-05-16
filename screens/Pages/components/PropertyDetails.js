@@ -7,7 +7,8 @@ import {
   Linking,
   Modal, Share,
   View,
-  Text
+  Text,
+  Platform
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
@@ -318,70 +319,61 @@ export default function PropertyDetails({ navigation }) {
     shareProperty();
   }, []);
   const handleWhatsappChat = useCallback(
-    async (property) => {
-      try {
-        const owner = await getOwnerDetails(property);
-        const ownerPhone = owner?.mobile;
-
-        if (!owner || !ownerPhone) {
-          Toast.show({
-            placement: "top-right",
-            render: () => (
-              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-                Owner phone number not available.
-              </Box>
-            ),
-          });
-          return;
-        }
-
-        const ownerName = owner?.name || "Owner";
-        const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
-        const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
-        const encodedMessage = encodeURIComponent(message);
-
-        const normalizedPhone = ownerPhone.startsWith("+")
-          ? ownerPhone.replace(/\D/g, "")
-          : `91${ownerPhone.replace(/\D/g, "")}`;
-
-        const whatsappURL = `whatsapp://send?phone=${normalizedPhone}&text=${encodedMessage}`;
-        const whatsappBusinessURL = `whatsapp-business://send?phone=${normalizedPhone}&text=${encodedMessage}`;
-        const waWebFallback = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
-
-        const isWhatsappAvailable = await Linking.canOpenURL(whatsappURL);
-        const isWhatsappBusinessAvailable = await Linking.canOpenURL(
-          whatsappBusinessURL
-        );
-
-        if (isWhatsappAvailable) {
-          await Linking.openURL(whatsappURL);
-        } else if (isWhatsappBusinessAvailable) {
-          await Linking.openURL(whatsappBusinessURL);
-        } else {
-          Toast.show({
-            placement: "top-right",
-            render: () => (
-              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-                WhatsApp is not installed. Redirecting to browser...
-              </Box>
-            ),
-          });
-          await Linking.openURL(waWebFallback);
-        }
-      } catch (error) {
-        console.error("Error opening WhatsApp:", error);
-        Toast.show({
-          placement: "top-right",
-          render: () => (
-            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-              Failed to open WhatsApp chat.
-            </Box>
-          ),
-        });
-      }
-    },
-    [getOwnerDetails, userInfo]
-  );
+     async (property) => {
+       try {
+         let ownerData = await getOwnerDetails(property);
+         const ownerPhone = ownerData?.mobile;
+         if (!ownerPhone) {
+           Toast.show({
+             placement: "top-right",
+             render: () => (
+               <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                 Owner phone number not available.
+               </Box>
+             ),
+           });
+           return;
+         }
+         const whatsappStoreLink =
+           Platform.OS === "android"
+             ? "https://play.google.com/store/apps/details?id=com.whatsapp"
+             : "https://apps.apple.com/us/app/whatsapp-messenger/id310633997";
+         const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
+         const ownerName = ownerData?.name || "Owner";
+         const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
+         const encodedMessage = encodeURIComponent(message);
+         const normalizedPhone = ownerPhone.startsWith("+")
+           ? ownerPhone.replace(/\D/g, "")
+           : `91${ownerPhone.replace(/\D/g, "")}`;
+         const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
+         const supported = await Linking.canOpenURL(whatsappUrl);
+         if (supported) {
+           await Linking.openURL(whatsappUrl);
+         } else {
+           Toast.show({
+             placement: "top-right",
+             render: () => (
+               <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                 WhatsApp is not installed. Redirecting to app store...
+               </Box>
+             ),
+           });
+           await Linking.openURL(whatsappStoreLink);
+         }
+       } catch (error) {
+         console.error("Error opening WhatsApp:", error);
+         Toast.show({
+           placement: "top-right",
+           render: () => (
+             <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+               Failed to open WhatsApp chat.
+             </Box>
+           ),
+         });
+       }
+     },
+     [owner, userInfo, getOwnerDetails]
+   );
   const memoizedPhotos = useMemo(() => photos, [photos]);
   const SkeletonLoader = () => (
     <FlatList

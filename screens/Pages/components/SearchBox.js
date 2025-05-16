@@ -55,6 +55,7 @@ export default function SearchBox() {
     price,
     location,
     property_cost,
+    property_for
   } = useSelector((state) => state.search, shallowEqual);
   const searchData = useSelector((state) => state.search);
   const cities = useSelector((state) => state.property.cities, shallowEqual);
@@ -106,6 +107,7 @@ export default function SearchBox() {
   }, [tab, property_in, sub_type, bhk, occupancy, location]);
   const togglePropertyType = (type) => {
     setSelectedPropertyType(type);
+    const propertyFor = mapTabToPropertyFor(type);
     const payload = {
       tab: type,
       property_for: mapTabToPropertyFor(type),
@@ -113,6 +115,7 @@ export default function SearchBox() {
       sub_type: "",
       bhk: null,
       occupancy: "",
+      property_cost: propertyFor === "Rent" ? "" : property_cost,
     };
     if (type === "Plot") {
       payload.sub_type = "Plot";
@@ -128,6 +131,7 @@ export default function SearchBox() {
     setSelectedSubPropertyType(payload.sub_type || "Apartment");
     setSelectedBedrooms("");
     setSelectedPossession("");
+    setSelectedBudget(propertyFor === "Rent" ? "" : selectedBudget);
     dispatch(setSearchData(payload));
   };
   const toggleBuildingType = (type) => {
@@ -354,6 +358,7 @@ export default function SearchBox() {
     setSelectedLocation(null);
     setSearchQuery("");
     setFilteredLocations(locations);
+    setSelectedBudget("");
     dispatch(
       setSearchData({
         tab: "Buy",
@@ -367,6 +372,7 @@ export default function SearchBox() {
         price: "Relevance",
         plot_subType: "Buy",
         commercial_subType: "Buy",
+        property_cost:""
       })
     );
     Toast.show({
@@ -529,18 +535,20 @@ export default function SearchBox() {
               </View>
             </FilterSection>
           )}
-        <FilterSection title="Budget">
-          <View style={styles.filterOptionsRow}>
-            {Budget.map((item) => (
-              <FilterOption
-                key={item.value}
-                label={item.label}
-                selected={selectedBudget === item.value}
-                onPress={() => toggleBudget(item.value)}
-              />
-            ))}
-          </View>
-        </FilterSection>
+        {(tab !== "Rent" && searchData.property_for !== "Rent") && (
+          <FilterSection title="Budget">
+            <View style={styles.filterOptionsRow}>
+              {Budget.map((item) => (
+                <FilterOption
+                  key={item.value}
+                  label={item.label}
+                  selected={selectedBudget === item.value}
+                  onPress={() => toggleBudget(item.value)}
+                />
+              ))}
+            </View>
+          </FilterSection>
+        )}
         <FilterSection title="Possession Status">
           <View style={styles.filterOptionsRow}>
             {possessionStatuses.map((status) => (

@@ -350,7 +350,7 @@ export default function Wishlist() {
             <FlatList
               data={properties}
               renderItem={({ item }) => (
-                <View px={3} py={2}>
+                <View px={1} py={2}>
                   <PropertyCard
                     item={item}
                     onFav={handleInterestAPI}
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    paddingHorizontal: 5,
+    paddingHorizontal: 1,
   },
   safeArea: {
     flex: 1,

@@ -166,6 +166,10 @@ const SearchBarProperty = ({
     ) {
       setSelectedBedrooms("");
       dispatch(setBHK(""));
+      if (mapPropertyForToTab(property_for) === "Rent") {
+      setSelectedBudget("");
+      dispatch(setSearchData({ property_cost: "" }));
+    }
     }
   }, [
     property_for,
@@ -323,6 +327,7 @@ const SearchBarProperty = ({
       possession_status: selectedPossession || "",
       location: localSearchQuery,
       price: selectedSort,
+      property_cost: type === "Rent" ? "" : selectedBudget,
     };
     if (type === "Plot") {
       payload.sub_type = "Plot";
@@ -345,6 +350,7 @@ const SearchBarProperty = ({
     }
     setSelectedPossession("");
     payload.possession_status = "";
+     setSelectedBudget(type === "Rent" ? "" : selectedBudget);
     dispatch(setSearchData(payload));
   };
   const toggleBuildingType = (type) => {
@@ -364,6 +370,7 @@ const SearchBarProperty = ({
       possession_status: "",
       location: localSearchQuery,
       price: selectedSort,
+      property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
     };
     if (
       ["Plot", "Land", "Others"].includes(newSubType) ||
@@ -415,6 +422,7 @@ const SearchBarProperty = ({
         possession_status: selectedPossession,
         location: localSearchQuery,
         price: selectedSort,
+        property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
       })
     );
   };
@@ -435,6 +443,8 @@ const SearchBarProperty = ({
         possession_status: type,
         location: localSearchQuery,
         price: selectedSort,
+        property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
+
       })
     );
   };
@@ -452,6 +462,7 @@ const SearchBarProperty = ({
       possession_status: selectedPossession,
       priceFilter: selectedSort,
       search: localSearchQuery.trim() || "",
+       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
       property_status: 1,
     };
     setFilters(updatedFilters);
@@ -464,6 +475,7 @@ const SearchBarProperty = ({
       possession_status: selectedPossession,
       location: localSearchQuery.trim() || "",
       price: selectedSort,
+       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
     };
     if (
       ["Plot", "Land", "Others"].includes(selectedSubPropertyType) ||
@@ -489,6 +501,7 @@ const SearchBarProperty = ({
     setSelectedBedrooms("");
     setSelectedPossession("");
     setSelectedSort("Relevance");
+    setSelectedBudget("");
     setLocalSearchQuery("");
     const defaultFilters = {
       property_for: mapTabToPropertyFor(defaultPropertyType),
@@ -513,6 +526,7 @@ const SearchBarProperty = ({
         location: "",
         price: "Relevance",
         plot_subType: "Buy",
+        property_cost:""
       })
     );
     fetchProperties(true, defaultFilters, "");
@@ -683,18 +697,20 @@ const SearchBarProperty = ({
                     </View>
                   </FilterSection>
                 )}
-              <FilterSection title="Budget">
-                <View style={styles.filterOptionsRow}>
-                  {Budget.map((item) => (
-                    <FilterOption
-                      key={item.value}
-                      label={item.label}
-                      selected={selectedBudget === item.value}
-                      onPress={() => toggleBudget(item.value)}
-                    />
-                  ))}
-                </View>
-              </FilterSection>
+              {selectedPropertyType !== "Rent" && (
+                <FilterSection title="Budget">
+                  <View style={styles.filterOptionsRow}>
+                    {Budget.map((item) => (
+                      <FilterOption
+                        key={item.value}
+                        label={item.label}
+                        selected={selectedBudget === item.value}
+                        onPress={() => toggleBudget(item.value)}
+                      />
+                    ))}
+                  </View>
+                </FilterSection>
+              )}
               <FilterSection title="Possession Status">
                 <View style={styles.filterOptionsRow}>
                   {possessionStatuses.map((status) => (

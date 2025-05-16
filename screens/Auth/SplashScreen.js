@@ -1,10 +1,23 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image, Spinner, Text, Toast } from "native-base";
-import React, { useEffect } from "react";
+import React, { useEffect,useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import splashConfig from "../../splashConfig";
+
+
 export default function SplashScreen() {
   const navigation = useNavigation();
+    const [imageError, setImageError] = useState(false);
+
+ const getImageSource = () => {
+    if (imageError || !splashConfig.assets) {
+
+      return require("../../assets/Screen 1.png");
+    }
+    return { uri: splashConfig.assets }; // Use the backend URL
+  };
+
   useEffect(() => {
     const checkToken = async () => {
       try {
@@ -51,9 +64,10 @@ export default function SplashScreen() {
     <View style={styles.container}>
       <Image
         style={styles.image}
-        source={require("../../assets/Screen 1.png")}
+        source={getImageSource()}
         alt="Meet Owner Logo"
         resizeMode="contain"
+        onError={() => setImageError(true)} // Set error state on failure
       />
       <View style={styles.loaderContainer}>
         <Text fontSize={20} fontWeight="bold">

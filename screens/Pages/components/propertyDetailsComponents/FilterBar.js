@@ -6,6 +6,7 @@ import {
   Text,
   View,
   Image,
+  Platform
 } from "react-native";
 import AllIcon from "../../../../assets/propertyicons/menu-bar.png";
 import VerifiedIcon from "../../../../assets/propertyicons/home-insurance.png";
@@ -83,10 +84,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     paddingVertical: 10,
     paddingHorizontal: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    ...(Platform.OS !== "ios" && {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 5,
+    }),
   },
   flatListContent: {
     paddingHorizontal: 5,

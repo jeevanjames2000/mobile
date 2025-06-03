@@ -2,7 +2,7 @@
   "expo": {
     "name": "Meetowner",
     "slug": "meetowner",
-    "version": "4.0.7",
+    "version": "4.0.8",
     "orientation": "portrait",
     "sdkVersion": "52.0.0",
     "icon": "./assets/logoicon.png",
@@ -31,7 +31,7 @@
       "config": {
         "googleMapsApiKey": "AIzaSyBmei9lRUUfJI-kLIPNBoc2SxEkwhKHyvU"
       },
-      "buildNumber": "2.0",
+      "buildNumber": "2.1",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "MeetOwner needs access to your location to display nearby properties based on your current location, improving property search results.",
         "NSLocationAlwaysUsageDescription": "MeetOwner needs access to your location in the background to provide continuous property suggestions and improve location-based services.",
@@ -48,7 +48,7 @@
     },
     "android": {
       "googleServicesFile": "./google-services.json",
-      "versionCode": 28,
+      "versionCode": 29,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBmei9lRUUfJI-kLIPNBoc2SxEkwhKHyvU"

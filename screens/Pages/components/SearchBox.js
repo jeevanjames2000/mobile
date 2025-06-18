@@ -27,10 +27,7 @@ import {
   setCities,
   setDeviceLocation,
 } from "../../../store/slices/propertyDetails";
-import { PropertyTypeIcon } from "./SearchBarComponents/PropertyIcon";
-import { FilterSection } from "./SearchBarComponents/FilterSection";
-import { FilterOption } from "./SearchBarComponents/FilterOption";
-import SearchBarSection from "./SearchBarComponents/SearchBarSection";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   setBHK,
   setOccupancy,
@@ -42,6 +39,11 @@ import {
   setPossesionStatus,
 } from "../../../store/slices/searchSlice";
 import CustomHeaderFilter from "./SearchBarComponents/CustomHeaderFilter";
+import { PropertyTypeIcon } from "./SearchBarComponents/PropertyIcon";
+import { FilterSection } from "./SearchBarComponents/FilterSection";
+import { FilterOption } from "./SearchBarComponents/FilterOption";
+import SearchBarSection from "./SearchBarComponents/SearchBarSection";
+
 export default function SearchBox() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -55,7 +57,7 @@ export default function SearchBox() {
     price,
     location,
     property_cost,
-    property_for
+    property_for,
   } = useSelector((state) => state.search, shallowEqual);
   const searchData = useSelector((state) => state.search);
   const cities = useSelector((state) => state.property.cities, shallowEqual);
@@ -81,6 +83,7 @@ export default function SearchBox() {
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedPossession, setSelectedPossession] = useState(occupancy || "");
   const inputRef = useRef(null);
+
   const mapTabToPropertyFor = (tab) => {
     const mapping = {
       Buy: "Sell",
@@ -90,6 +93,7 @@ export default function SearchBox() {
     };
     return mapping[tab] || "Sell";
   };
+
   useEffect(() => {
     setSelectedPropertyType(tab || "Buy");
     setSelectedBuildingType(property_in || "Residential");
@@ -105,12 +109,13 @@ export default function SearchBox() {
     setSelectedPossession(occupancy || "");
     setSearchQuery(location || "");
   }, [tab, property_in, sub_type, bhk, occupancy, location]);
+
   const togglePropertyType = (type) => {
     setSelectedPropertyType(type);
     const propertyFor = mapTabToPropertyFor(type);
     const payload = {
       tab: type,
-      property_for: mapTabToPropertyFor(type),
+      property_for: propertyFor,
       property_in: "",
       sub_type: "",
       bhk: null,
@@ -134,6 +139,7 @@ export default function SearchBox() {
     setSelectedBudget(propertyFor === "Rent" ? "" : selectedBudget);
     dispatch(setSearchData(payload));
   };
+
   const toggleBuildingType = (type) => {
     setSelectedBuildingType(type);
     dispatch(setPropertyIn(type));
@@ -155,6 +161,7 @@ export default function SearchBox() {
       dispatch(setPossesionStatus(""));
     }
   };
+
   const toggleSubPropertyType = (type) => {
     const validResidentialSubTypes = [
       "Apartment",
@@ -185,6 +192,7 @@ export default function SearchBox() {
       }
     }
   };
+
   const toggleBedroom = (type) => {
     const validBHKs = [
       "1 BHK",
@@ -201,51 +209,89 @@ export default function SearchBox() {
       dispatch(setBHK(type));
     }
   };
+
   const toggleFurnishing = (type) => setSelectedFurnishing(type);
   const togglePostedBy = (type) => setSelectedPostedBy(type);
   const toggleAmenity = (type) =>
     setSelectedAmenities((prev) =>
       prev.includes(type)
-        ? prev.filter((item) => item !== type)
+        ? prev.filter((item) => item !== item)
         : [...prev, type]
     );
+
   const Budget = [
     { label: "Up to 50 Lakhs", value: "50" },
     { label: "50-75 Lakhs", value: "50-75" },
     { label: "75 Lakhs+", value: "75+" },
   ];
+
   const toggleBudget = (value) => {
     setSelectedBudget(value);
     dispatch(setSearchData({ property_cost: value }));
   };
+
   const togglePossession = (type) => {
     const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
-    const validPossessionStatuses = isPlotOrLand
+    const validPossessionStatuses = property_for === "Rent"
+      ? ["Ready to move In"]
+      : isPlotOrLand
       ? ["Future", "Immediate"]
       : ["Ready to move", "Under Construction"];
+
     if (validPossessionStatuses.includes(type)) {
       setSelectedPossession(type);
       dispatch(setOccupancy(type));
       dispatch(setPossesionStatus(type));
+    } else if (property_for === "Rent" && type !== "Ready to move") {
+      setSelectedPossession("Ready to move");
+      dispatch(setOccupancy("Ready to move"));
+      dispatch(setPossesionStatus("Ready to move"));
     }
   };
+
   useEffect(() => {
-    const fetchCities = async () => {
+    const loadCitiesFromStorage = async () => {
       try {
-        if (cities.length === 0) {
-          const response = await fetch(
-            "https://api.meetowner.in/general/getcities"
-          );
+        setLoading(true);
+        const storedCities = await AsyncStorage.getItem("cachedCities");
+        if (storedCities) {
+          const parsedCities = JSON.parse(storedCities);
+          dispatch(setCities(parsedCities));
+        } else {
+          // Fetch from API if not in storage
+          const response = await fetch("https://api.meetowner.in/api/v1/getAllCities");
           const data = await response.json();
-          dispatch(setCities(data.cities || []));
+          const formattedCities = data.map((cityObj) => ({
+            label: cityObj.city,
+            value: cityObj.city,
+          }));
+          dispatch(setCities(formattedCities));
+          await AsyncStorage.setItem("cachedCities", JSON.stringify(formattedCities));
         }
       } catch (error) {
-        console.error("Error fetching cities:", error);
+        console.error("Error loading cities:", error);
+        // Fallback to API fetch if storage fails
+        try {
+          const response = await fetch("https://api.meetowner.in/api/v1/getAllCities");
+          const data = await response.json();
+          const formattedCities = data.map((cityObj) => ({
+            label: cityObj.city,
+            value: cityObj.city,
+          }));
+          dispatch(setCities(formattedCities));
+          await AsyncStorage.setItem("cachedCities", JSON.stringify(formattedCities));
+        } catch (fetchError) {
+          console.error("Error fetching cities from API:", fetchError);
+        }
+      } finally {
+        setLoading(false);
       }
     };
-    fetchCities();
+
+    loadCitiesFromStorage();
     getUserLocation();
-  }, [dispatch, cities.length]);
+  }, [dispatch]);
+
   const getUserLocation = async () => {
     setLoading(true);
     try {
@@ -275,6 +321,7 @@ export default function SearchBox() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     setLocations(cities);
     setFilteredLocations(cities);
@@ -293,6 +340,7 @@ export default function SearchBox() {
       }
     }
   }, [cities, userLocation, dispatch]);
+
   const handleCitySearch = (query) => {
     setSearchQuery(query);
     setFilteredLocations(
@@ -303,12 +351,14 @@ export default function SearchBox() {
           )
     );
   };
+
   const handleCitySelect = (item) => {
     setSelectedLocation(item);
     dispatch(setCity(item.label));
     onClose();
     setSearchQuery("");
   };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
       onPress={() => handleCitySelect(item)}
@@ -317,6 +367,7 @@ export default function SearchBox() {
       <Text style={styles.fullWidthText}>{item.label}</Text>
     </TouchableOpacity>
   );
+
   useEffect(() => {
     const backAction = () => {
       if (navigation.canGoBack()) {
@@ -335,6 +386,7 @@ export default function SearchBox() {
     );
     return () => backHandler.remove();
   }, [navigation]);
+
   React.useLayoutEffect(() => {
     navigation.setOptions({
       header: () => (
@@ -346,6 +398,7 @@ export default function SearchBox() {
       ),
     });
   }, [navigation, handleClearAll]);
+
   const handleClearAll = () => {
     setSelectedPropertyType("Buy");
     setSelectedBuildingType("Residential");
@@ -372,7 +425,7 @@ export default function SearchBox() {
         price: "Relevance",
         plot_subType: "Buy",
         commercial_subType: "Buy",
-        property_cost:""
+        property_cost: "",
       })
     );
     Toast.show({
@@ -387,9 +440,11 @@ export default function SearchBox() {
       },
     });
   };
+
   const handlePropertiesLists = () => {
     navigation.navigate("PropertyList");
   };
+
   const residentialPropertyTypes = [
     "Apartment",
     "Independent Villa",
@@ -407,14 +462,16 @@ export default function SearchBox() {
     "Others",
   ];
   const propertyTypes =
-    selectedBuildingType === "Commercial" ||
-    selectedPropertyType === "Commercial"
+    selectedBuildingType === "Commercial" || selectedPropertyType === "Commercial"
       ? commercialPropertyTypes
       : residentialPropertyTypes;
   const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
-  const possessionStatuses = isPlotOrLand
+  const possessionStatuses = property_for === "Rent"
+    ? ["Ready to move In"]
+    : isPlotOrLand
     ? ["Future", "Immediate"]
     : ["Ready to move", "Under Construction"];
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -461,8 +518,7 @@ export default function SearchBox() {
           </View>
         </View>
         <SearchBarSection />
-        {(selectedPropertyType === "Plot" ||
-          selectedPropertyType === "Commercial") && (
+        {(selectedPropertyType === "Plot" || selectedPropertyType === "Commercial") && (
           <FilterSection title="Looking For">
             <View style={styles.filterOptionsRow}>
               <FilterOption

@@ -150,6 +150,13 @@ const PropertyCard = memo(
                     )}
                 </View>
               )}
+               {(item.property_for === "Rent" ) && (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {item?.occupancy === "Ready To Move In" && (
+                    <Text style={styles.possessionText}>Ready to move In</Text>
+                  )}
+                </View>
+              )}
               {item.sub_type === "Plot" && (
                 <Text style={styles.possessionText}>
                   {item.possession_status?.toLowerCase() === "immediate"
@@ -206,7 +213,8 @@ const PropertyCard = memo(
                 alignItems="center"
               >
                 <Text style={styles.propertyText}>
-                  ₹ {formatToIndianCurrency(item.property_cost || 0)}
+                  ₹ {item.property_for === 'Rent' ? formatToIndianCurrency(item.monthly_rent || 0) : 
+                  formatToIndianCurrency(item.property_cost || 0)} {item.property_cost_type }
                 </Text>
               </HStack>
               {item.sub_type === "Apartment" ||
@@ -292,11 +300,21 @@ const mapTabToPropertyFor = (tab) => {
   return mapping[tab] || "Sell";
 };
 const formatToIndianCurrency = (value) => {
-  if (value >= 10000000) return (value / 10000000).toFixed(2) + " Cr";
-  if (value >= 100000) return (value / 100000).toFixed(2) + " L";
-  if (value >= 1000) return (value / 1000).toFixed(2) + " K";
+  if (value >= 10000000) {
+    const crores = value / 10000000;
+    return Math.floor(crores) === crores ? crores + " Cr" : crores.toFixed(2) + " Cr";
+  }
+  if (value >= 100000) {
+    const lakhs = value / 100000;
+    return Math.floor(lakhs) === lakhs ? lakhs + " L" : lakhs.toFixed(2) + " L";
+  }
+  if (value >= 1000) {
+    const thousands = value / 1000;
+    return Math.floor(thousands) === thousands ? thousands + " K" : thousands.toFixed(2) + " K";
+  }
   return value.toString();
 };
+
 export default function PropertyLists({ route }) {
   const intrestedProperties = useSelector(
     (state) => state.property.intrestedProperties
@@ -343,6 +361,7 @@ export default function PropertyLists({ route }) {
     occupancy: occupancy || "",
     possession_status: possession_status || "",
     property_status: 1,
+    
   });
   const mapPriceFilterToApiValue = (priceFilter) => {
     const validFilters = [

@@ -58,12 +58,21 @@ export default function PropertyDetails({ navigation }) {
   const dispatch = useDispatch();
   const property = useSelector((state) => state.property.propertyDetails);
 
-  const formatToIndianCurrency = (value) => {
-    if (value >= 10000000) return (value / 10000000).toFixed(2) + " Cr";
-    if (value >= 100000) return (value / 100000).toFixed(2) + " L";
-    if (value >= 1000) return (value / 1000).toFixed(2) + " K";
-    return value;
-  };
+const formatToIndianCurrency = (value) => {
+  if (value >= 10000000) {
+    const crores = value / 10000000;
+    return Math.floor(crores) === crores ? crores + " Cr" : crores.toFixed(2) + " Cr";
+  }
+  if (value >= 100000) {
+    const lakhs = value / 100000;
+    return Math.floor(lakhs) === lakhs ? lakhs + " L" : lakhs.toFixed(2) + " L";
+  }
+  if (value >= 1000) {
+    const thousands = value / 1000;
+    return Math.floor(thousands) === thousands ? thousands + " K" : thousands.toFixed(2) + " K";
+  }
+  return value.toString();
+};
   const [userInfo, setUserInfo] = useState("");
   const [location, setLocation] = useState(null);
   const [region, setRegion] = useState(null);
@@ -242,7 +251,7 @@ export default function PropertyDetails({ navigation }) {
 
   const getOwnerDetails = async (property) => {
     const response = await fetch(
-      `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property?.unique_property_id}`
+      `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${property?.unique_property_id}`
     );
     const data = await response.json();
     const propertydata = data.property_details;
@@ -452,6 +461,23 @@ export default function PropertyDetails({ navigation }) {
                       </Text>
                     </>
                   )}
+                  
+              </View>
+            )}
+             {(property.property_for === "Rent" ) && (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <>
+                      <View style={styles.verticalDivider} />
+                      <Text style={styles.possessionText}>
+                        Available From - {" "}
+                        {new Date(
+                          property.available_from
+                        ).toLocaleDateString("en-GB", {
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </Text>
+                    </>  
               </View>
             )}
 
@@ -475,7 +501,7 @@ export default function PropertyDetails({ navigation }) {
             style={styles.containerPosession}
           >
             <Text style={styles.propertyPrice}>
-              ₹ {formatToIndianCurrency(property.property_cost)}
+              ₹ {property.property_for === 'Rent' ? formatToIndianCurrency(property.monthly_rent || 0) : formatToIndianCurrency(property.property_cost || 0)}
             </Text>
             <Text style={styles.propertyPrice} marginLeft="1">
               {["Apartment", "Independent House", "Independent Villa"].includes(
@@ -493,7 +519,7 @@ export default function PropertyDetails({ navigation }) {
               <View style={styles.overviewItem}>
                 <Text style={styles.overviewLabel}>Project Area</Text>
                 <Text style={styles.overviewValue}>
-                  {formatValue(property.total_project_area)} Acres
+                  {formatValue(property.total_project_area)} {property.total_project_area_type ||"Acres"}
                 </Text>
               </View>
 

@@ -35,6 +35,7 @@ import {
   setPrice,
   setPlotSubType,
 } from "../../../../store/slices/searchSlice";
+
 const mapTabToPropertyFor = (tab) => {
   const mapping = {
     Buy: "Sell",
@@ -44,9 +45,11 @@ const mapTabToPropertyFor = (tab) => {
   };
   return mapping[tab] || "Sell";
 };
+
 const mapPropertyForToTab = (propertyFor) => {
   return propertyFor === "Sell" ? "Buy" : "Rent";
 };
+
 const SearchBarProperty = ({
   searchQuery,
   setSearchQuery,
@@ -109,10 +112,12 @@ const SearchBarProperty = ({
     { label: "50-75 Lakhs", value: "50-75" },
     { label: "75 Lakhs+", value: "75+" },
   ];
+
   const toggleBudget = (value) => {
     setSelectedBudget(value);
     dispatch(setSearchData({ property_cost: value }));
   };
+
   const [selectedSort, setSelectedSort] = useState(price || "Relevance");
   const sortOptions = [
     "Relevance",
@@ -141,9 +146,12 @@ const SearchBarProperty = ({
       ? commercialPropertyTypes
       : residentialPropertyTypes;
   const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
-  const possessionStatuses = isPlotOrLand
+  const possessionStatuses = property_for === "Rent"
+    ? ["Ready to move In"]
+    : isPlotOrLand
     ? ["Immediate", "Future"]
     : ["Ready to move", "Under Construction"];
+
   useEffect(() => {
     setSelectedPropertyType(
       sub_type === "Plot" || sub_type === "Land"
@@ -167,9 +175,9 @@ const SearchBarProperty = ({
       setSelectedBedrooms("");
       dispatch(setBHK(""));
       if (mapPropertyForToTab(property_for) === "Rent") {
-      setSelectedBudget("");
-      dispatch(setSearchData({ property_cost: "" }));
-    }
+        setSelectedBudget("");
+        dispatch(setSearchData({ property_cost: "" }));
+      }
     }
   }, [
     property_for,
@@ -184,12 +192,11 @@ const SearchBarProperty = ({
     searchQuery,
     budget,
   ]);
+
   useEffect(() => {
     const loadRecentSuggestions = async () => {
       try {
-        const cachedSuggestions = await AsyncStorage.getItem(
-          "recentSuggestions"
-        );
+        const cachedSuggestions = await AsyncStorage.getItem("recentSuggestions");
         if (cachedSuggestions) {
           setRecentSuggestions(JSON.parse(cachedSuggestions));
         }
@@ -199,6 +206,7 @@ const SearchBarProperty = ({
     };
     loadRecentSuggestions();
   }, []);
+
   const saveToCache = async (newSuggestion) => {
     try {
       let updatedSuggestions = [newSuggestion, ...recentSuggestions];
@@ -214,6 +222,7 @@ const SearchBarProperty = ({
       console.error("Error saving to cache:", error);
     }
   };
+
   const fetchSuggestions = async (city, query) => {
     if (!query || query.length < 3 || !city) {
       setSuggestions(recentSuggestions);
@@ -236,9 +245,7 @@ const SearchBarProperty = ({
         ...recentSuggestions,
         ...formattedSuggestions.filter(
           (suggestion) =>
-            !recentSuggestions.some(
-              (recent) => recent.value === suggestion.value
-            )
+            !recentSuggestions.some((recent) => recent.value === suggestion.value)
         ),
       ].slice(0, 10);
       setSuggestions(uniqueSuggestions);
@@ -252,10 +259,12 @@ const SearchBarProperty = ({
       setLoading(false);
     }
   };
+
   const debouncedFetchSuggestions = useCallback(
     debounce((city, query) => fetchSuggestions(city, query), 300),
     [recentSuggestions]
   );
+
   const handleSearch = useCallback(
     (query) => {
       setLocalSearchQuery(query);
@@ -278,6 +287,7 @@ const SearchBarProperty = ({
       dispatch,
     ]
   );
+
   const handleClear = () => {
     setLocalSearchQuery("");
     setSearchQuery("");
@@ -286,6 +296,7 @@ const SearchBarProperty = ({
     setSuggestions([]);
     fetchProperties(true, filters, "");
   };
+
   const handleSuggestionSelect = (item) => {
     setLocalSearchQuery(item.label);
     setSearchQuery(item.label);
@@ -294,6 +305,7 @@ const SearchBarProperty = ({
     setSuggestions([]);
     fetchProperties(true, filters, item.label);
   };
+
   const renderSuggestionItem = ({ item }) => (
     <TouchableOpacity
       style={styles.suggestionItem}
@@ -302,6 +314,7 @@ const SearchBarProperty = ({
       <Text style={styles.suggestionText}>{item.label}</Text>
     </TouchableOpacity>
   );
+
   const handleSortSelect = (sortOption) => {
     setSelectedSort(sortOption);
     const updatedFilters = { ...filters, priceFilter: sortOption };
@@ -310,6 +323,7 @@ const SearchBarProperty = ({
     fetchProperties(true, updatedFilters, localSearchQuery.trim() || "");
     onCloseSort();
   };
+
   const togglePropertyType = (type) => {
     setSelectedPropertyType(type);
     const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
@@ -350,9 +364,10 @@ const SearchBarProperty = ({
     }
     setSelectedPossession("");
     payload.possession_status = "";
-     setSelectedBudget(type === "Rent" ? "" : selectedBudget);
+    setSelectedBudget(type === "Rent" ? "" : selectedBudget);
     dispatch(setSearchData(payload));
   };
+
   const toggleBuildingType = (type) => {
     setSelectedBuildingType(type);
     const newSubType = type === "Commercial" ? "Retail Shop" : "Apartment";
@@ -382,6 +397,7 @@ const SearchBarProperty = ({
     setSelectedPossession("");
     dispatch(setSearchData(payload));
   };
+
   const toggleSubPropertyType = (type) => {
     setSelectedSubPropertyType(type);
     const payload = {
@@ -406,6 +422,7 @@ const SearchBarProperty = ({
     setSelectedPossession("");
     dispatch(setSearchData(payload));
   };
+
   const toggleBedroom = (type) => {
     setSelectedBedrooms(type);
     dispatch(
@@ -426,28 +443,57 @@ const SearchBarProperty = ({
       })
     );
   };
-  const togglePossession = (type) => {
-    setSelectedPossession(type);
-    dispatch(
-      setSearchData({
-        tab: selectedPropertyType,
-        property_for: ["Plot", "Land"].includes(selectedSubPropertyType)
-          ? selectedPropertyType === "Buy"
-            ? "Sell"
-            : "Rent"
-          : mapTabToPropertyFor(selectedPropertyType),
-        property_in: selectedBuildingType,
-        sub_type: selectedSubPropertyType,
-        bhk: selectedBedrooms,
-        occupancy: type,
-        possession_status: type,
-        location: localSearchQuery,
-        price: selectedSort,
-        property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
 
-      })
-    );
+  const togglePossession = (type) => {
+    const validPossessionStatuses = property_for === "Rent"
+      ? ["Ready to move In"]
+      : isPlotOrLand
+      ? ["Immediate", "Future"]
+      : ["Ready to move", "Under Construction"];
+
+    if (validPossessionStatuses.includes(type)) {
+      setSelectedPossession(type);
+      dispatch(
+        setSearchData({
+          tab: selectedPropertyType,
+          property_for: ["Plot", "Land"].includes(selectedSubPropertyType)
+            ? selectedPropertyType === "Buy"
+              ? "Sell"
+              : "Rent"
+            : mapTabToPropertyFor(selectedPropertyType),
+          property_in: selectedBuildingType,
+          sub_type: selectedSubPropertyType,
+          bhk: selectedBedrooms,
+          occupancy: type,
+          possession_status: type,
+          location: localSearchQuery,
+          price: selectedSort,
+          property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
+        })
+      );
+    } else if (property_for === "Rent" && type !== "Ready to move In") {
+      setSelectedPossession("Ready to move In");
+      dispatch(
+        setSearchData({
+          tab: selectedPropertyType,
+          property_for: ["Plot", "Land"].includes(selectedSubPropertyType)
+            ? selectedPropertyType === "Buy"
+              ? "Sell"
+              : "Rent"
+            : mapTabToPropertyFor(selectedPropertyType),
+          property_in: selectedBuildingType,
+          sub_type: selectedSubPropertyType,
+          bhk: selectedBedrooms,
+          occupancy: "Ready to move In",
+          possession_status: "Ready to move In",
+          location: localSearchQuery,
+          price: selectedSort,
+          property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
+        })
+      );
+    }
   };
+
   const applyFilters = () => {
     const updatedFilters = {
       ...filters,
@@ -462,7 +508,7 @@ const SearchBarProperty = ({
       possession_status: selectedPossession,
       priceFilter: selectedSort,
       search: localSearchQuery.trim() || "",
-       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
+      property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
       property_status: 1,
     };
     setFilters(updatedFilters);
@@ -475,7 +521,7 @@ const SearchBarProperty = ({
       possession_status: selectedPossession,
       location: localSearchQuery.trim() || "",
       price: selectedSort,
-       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
+      property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
     };
     if (
       ["Plot", "Land", "Others"].includes(selectedSubPropertyType) ||
@@ -491,6 +537,7 @@ const SearchBarProperty = ({
     fetchProperties(true, updatedFilters, localSearchQuery.trim() || "");
     onCloseFilter();
   };
+
   const clearAllFilters = () => {
     const defaultPropertyType = "Buy";
     const defaultBuildingType = "Residential";
@@ -526,7 +573,7 @@ const SearchBarProperty = ({
         location: "",
         price: "Relevance",
         plot_subType: "Buy",
-        property_cost:""
+        property_cost: "",
       })
     );
     fetchProperties(true, defaultFilters, "");
@@ -541,6 +588,7 @@ const SearchBarProperty = ({
       ),
     });
   };
+
   return (
     <View style={styles.container}>
       <View style={styles.searchWrapper}>
@@ -767,6 +815,8 @@ const SearchBarProperty = ({
     </View>
   );
 };
+
+
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -957,4 +1007,5 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsSemiBold",
   },
 });
+
 export default SearchBarProperty;

@@ -157,7 +157,7 @@ const PropertyCard = memo(
                   )}
                 </View>
               )}
-              {item.sub_type === "Plot" && (
+              {(item.sub_type === "Plot" || item.sub_type === "Land" ) && (
                 <Text style={styles.possessionText}>
                   {item.possession_status?.toLowerCase() === "immediate"
                     ? "Immediate"
@@ -169,14 +169,14 @@ const PropertyCard = memo(
               )}
               <Text style={styles.possesionText}>|</Text>
               <Text style={styles.possesionText}>
-                {["Plot", "Land"].includes(item.sub_type)
-                  ? `${formatValue(item.plot_area)} sqyd`
-                  : item.builtup_area
-                  ? `${formatValue(item.builtup_area)} sqft`
-                  : `${formatValue(item.length_area || 0)} x ${formatValue(
-                      item.width_area || 0
-                    )} sqft`}
-              </Text>
+              {item.sub_type === "Land" && item.plot_area
+                ? `${item.total_project_area} acres` 
+                : item.sub_type === "Plot" && item.plot_area
+                ? `${formatValue(item.plot_area)} sqyd`
+                : item.builtup_area
+                ? `${formatValue(item.builtup_area)} sqft`
+                : `${formatValue(item.length_area || 0)} x ${formatValue(item.width_area || 0)} sqft`}
+            </Text>
             </HStack>
             <VStack style={styles.contentContainer}>
               <HStack justifyContent="space-between" alignItems="center">
@@ -225,7 +225,7 @@ const PropertyCard = memo(
                 </Text>
               ) : (
                 <Text style={styles.propertyText}>
-                  {item.property_in || "N/A"} | {item.sub_type || "N/A"}
+                  {item.property_in || "N/A"} | {item.sub_type || "N/A"} | {item.land_sub_type}
                 </Text>
               )}
             </VStack>
@@ -361,8 +361,11 @@ export default function PropertyLists({ route }) {
     occupancy: occupancy || "",
     possession_status: possession_status || "",
     property_status: 1,
+    city_id:city,
+   
     
   });
+  
   const mapPriceFilterToApiValue = (priceFilter) => {
     const validFilters = [
       "Relevance",
@@ -402,6 +405,7 @@ export default function PropertyLists({ route }) {
       priceFilter: price || "Relevance",
       property_cost: property_cost || "",
       property_status: 1,
+      city_id:city
     };
     setFilters(updatedFilters);
     setSearchQuery(location || "");
@@ -418,6 +422,7 @@ export default function PropertyLists({ route }) {
     price,
     property_cost,
   ]);
+
   const fetchProperties = useCallback(
     async (reset = false, appliedFilters = filters) => {
       if (!hasMore && !reset) return;
@@ -452,8 +457,10 @@ export default function PropertyLists({ route }) {
             ? { possession_status: appliedFilters.possession_status || "" }
             : { occupancy: appliedFilters.occupancy || "" }),
           property_status: "1",
+          city_id:city
         }).toString();
         const url = `https://api.meetowner.in/listings/v1/getAllPropertiesByType?${queryParams}`;
+        console.log(url);
         const response = await fetch(url);
         if (!response.ok) throw new Error(`API error: ${response.status}`);
         const data = await response.json();

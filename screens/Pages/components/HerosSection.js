@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
@@ -21,51 +21,125 @@ import "react-native-get-random-values";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
 import * as Location from "expo-location";
-import {
-  setCities,
-  setDeviceLocation,
-} from "../../../store/slices/propertyDetails";
+import { setCities } from "../../../store/slices/propertyDetails";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { setCityId } from "../../../store/slices/authSlice";
 import axios from "axios";
 import LocationImage from "../../../assets/location_icon.png";
+import { setCity } from "../../../store/slices/searchSlice";
+
 export default function HerosSection({ setSelectedCity }) {
   const dispatch = useDispatch();
+  const navigation = useNavigation();
+  const { isOpen, onOpen, onClose } = useDisclose();
   const [locations, setLocations] = useState([]);
   const [filteredLocations, setFilteredLocations] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const { isOpen, onOpen, onClose } = useDisclose();
   const cities = useSelector((state) => state.property.cities, shallowEqual);
-  const [suggestions, setSuggestions] = useState([]);
+  const city = useSelector((state) => state.search.city, shallowEqual);
   const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    const fetchCities = async () => {
-      try {
-        const response = await fetch(
-          "https://api.meetowner.in/general/getcities"
-        );
+  const [userLocation, setUserLocation] = useState("");
+  const inputRef = useRef(null);
+
+  const fetchCities = async () => {
+    try {
+      setLoading(true);
+      const storedCities = await AsyncStorage.getItem("cachedCities");
+      let formattedCities;
+      if (storedCities) {
+        formattedCities = JSON.parse(storedCities);
+      } else {
+        const response = await fetch("https://api.meetowner.in/api/v1/getAllCities");
         const data = await response.json();
-        dispatch(setCities(data.cities || []));
-        if (userLocation) {
-          const matchedCity = data.cities.find(
-            (city) => city.label.toLowerCase() === userLocation.toLowerCase()
-          );
-          if (matchedCity) {
-            const data = {
-              label: matchedCity.label,
-              value: matchedCity.value,
-            };
-            AsyncStorage.setItem("city_id", JSON.stringify(data));
-            dispatch(setCityId(data));
-          } else {
-          }
-        }
-      } catch (error) {}
-    };
+        formattedCities = data.map((cityObj) => ({
+          label: cityObj.city,
+          value: cityObj.city,
+        }));
+        await AsyncStorage.setItem("cachedCities", JSON.stringify(formattedCities));
+      }
+      dispatch(setCities(formattedCities));
+      setLocations(formattedCities);
+      setFilteredLocations(formattedCities);
+    } catch (error) {
+      console.error("Error fetching cities:", error);
+      try {
+        const response = await fetch("https://api.meetowner.in/api/v1/getAllCities");
+        const data = await response.json();
+        const formattedCities = data.map((cityObj) => ({
+          label: cityObj.city,
+          value: cityObj.city,
+        }));
+        dispatch(setCities(formattedCities));
+        await AsyncStorage.setItem("cachedCities", JSON.stringify(formattedCities));
+        setLocations(formattedCities);
+        setFilteredLocations(formattedCities);
+      } catch (fetchError) {
+        console.error("Error fetching cities from API:", fetchError);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUserLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.warn("Location permission denied");
+        dispatch(setCity("Unknown City"));
+        setUserLocation("Unknown City");
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+      });
+      const { latitude, longitude } = location.coords;
+      const geocode = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+      if (geocode.length > 0) {
+        const cityName = geocode[0]?.city || "Unknown City";
+        setUserLocation(cityName);
+        dispatch(setCity(cityName));
+      }
+    } catch (error) {
+      console.error("Error getting user location:", error);
+      dispatch(setCity("Unknown City"));
+      setUserLocation("Unknown City");
+    }
+  };
+
+  useEffect(() => {
     fetchCities();
-    getUserLocation();
-  }, [dispatch, userLocation]);
+    if (!city) {
+      getUserLocation();
+    }
+  }, [dispatch, city]);
+
+  useEffect(() => {
+    setLocations(cities);
+    setFilteredLocations(cities);
+    if (city && cities.length > 0) {
+      const matchedCity = cities.find(
+        (c) => c.label.toLowerCase() === city.toLowerCase()
+      );
+      if (matchedCity) {
+        setSelectedLocation({
+          label: matchedCity.label,
+          value: matchedCity.value,
+        });
+        setSelectedCity(matchedCity);
+      } else {
+        setSelectedLocation(null);
+        setSelectedCity(null);
+      }
+    } else {
+      setSelectedLocation(null);
+      setSelectedCity(null);
+    }
+  }, [cities, city, setSelectedCity]);
+
   const fetchProfileDetails = async () => {
     try {
       const storedDetails = await AsyncStorage.getItem("userdetails");
@@ -84,95 +158,59 @@ export default function HerosSection({ setSelectedCity }) {
           JSON.stringify({ data, timestamp: new Date().getTime() })
         );
       }
-    } catch (error) {}
-  };
-  const [userLocation, setUserLocation] = useState("");
-  const getUserLocation = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "Location access is required.");
-        dispatch(setUserLocation("Unknown City"));
-        return;
-      }
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
-      const { latitude, longitude } = location.coords;
-      const geocode = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
-      if (geocode.length > 0) {
-        const city = geocode[0]?.city || "Unknown City";
-        setUserLocation(city);
-        dispatch(setDeviceLocation(city));
-      }
     } catch (error) {
-      dispatch(setUserLocation("Unknown City"));
+      console.error("Error fetching profile details:", error);
     }
   };
-  const inputRef = useRef(null);
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
         inputRef.current?.focus();
-      }, 300);
+      }, 100); // Reduced delay for faster focus
     }
-    setLocations(cities);
     fetchProfileDetails();
-    setFilteredLocations(cities);
-    if (userLocation && cities.length > 0) {
-      const matchedCity = cities.find(
-        (city) => city.label.toLowerCase() === userLocation.toLowerCase()
-      );
-      if (matchedCity) {
-        setSelectedLocation({
-          label: matchedCity.label,
-          value: matchedCity.value,
-        });
-      } else {
-        setSelectedLocation(null);
-      }
-    }
-  }, [cities, userLocation]);
-  const handleSearch = useMemo(
-    () => (query) => {
-      if (query === searchQuery) return;
-      setSearchQuery(query);
-      setFilteredLocations(
-        query === ""
-          ? locations
-          : locations.filter((loc) =>
-              loc.label.toLowerCase().includes(query.toLowerCase())
-            )
-      );
-    },
-    [searchQuery]
-  );
-  const handleLocationSearch = (query) => {
+  }, [isOpen]);
+
+  const handleCitySearch = (query) => {
     setSearchQuery(query);
-    if (query.trim() === "") {
-      setSuggestions([]);
-      return;
-    }
+    setFilteredLocations(
+      query === ""
+        ? locations
+        : locations.filter((loc) =>
+            loc.label.toLowerCase().includes(query.toLowerCase())
+          )
+    );
   };
+
   const handleCitySelect = (item) => {
     setSelectedLocation(item);
     setSelectedCity(item);
+    dispatch(setCity(item.label));
     onClose();
+    setSearchQuery("");
   };
+
   const handlePropertiesLists = () => {
     navigation.navigate("SearchBox");
   };
-  const navigation = useNavigation();
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      onPress={() => handleCitySelect(item)}
+      style={styles.fullWidthItem}
+    >
+      <Text style={styles.fullWidthText}>{item.label}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <TouchableOpacity style={styles.cityButton} onPress={onOpen}>
           <HStack space={1} alignItems="center">
             <Text style={styles.cityText}>
-              {selectedLocation?.label || "Select City"}
+              {selectedLocation?.label || city || "Select City"}
             </Text>
             <Ionicons name="chevron-down" size={20} color="gray" />
           </HStack>
@@ -182,7 +220,7 @@ export default function HerosSection({ setSelectedCity }) {
             placeholder="Search locality"
             value={searchQuery}
             placeholderTextColor="#999"
-            onPress={handlePropertiesLists}
+            onPressIn={handlePropertiesLists}
             selectTextOnFocus={false}
             style={styles.textInput}
           />
@@ -198,75 +236,44 @@ export default function HerosSection({ setSelectedCity }) {
           />
         </TouchableOpacity>
       </View>
-      <View
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-          flex: 1,
-          width: "90%",
-          alignSelf: "center",
-          zIndex: 1,
-        }}
-      >
-        {loading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="small" color="#999" />
-          </View>
-        ) : suggestions.length > 0 ? (
-          <FlatList
-            data={suggestions}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.suggestionItem}
-                onPress={() => {
-                  setSearchQuery(item?.value || item?.label);
-                  setSuggestions([]);
-                }}
-              >
-                <Text style={styles.suggestionText}>{item?.label}</Text>
-              </TouchableOpacity>
-            )}
-            style={styles.suggestionsList}
-          />
-        ) : null}
-      </View>
+      {loading && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="small" color="#999" />
+        </View>
+      )}
       <Actionsheet isOpen={isOpen} onClose={onClose}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ width: "100%" }}
+          style={{ flex: 1, width: "100%" }}
         >
           <Actionsheet.Content
-            justifyContent={"flex-start"}
-            alignItems={"flex-start"}
-            maxHeight={500}
-            width={"100%"}
+            style={{
+              justifyContent: "flex-start",
+              alignItems: "flex-start",
+              maxHeight: "80%", // Responsive height
+              width: "100%",
+            }}
           >
             <TextInput
               placeholder="Search city"
               placeholderTextColor="#999"
               value={searchQuery}
-              onChangeText={handleSearch}
+              onChangeText={handleCitySearch}
               style={styles.actionsheetInput}
+              ref={inputRef}
+              autoFocus={false} // Controlled by useEffect
             />
             <FlatList
               data={filteredLocations}
               keyExtractor={(item, index) => `${item.label}-${index}`}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => handleCitySelect(item)}
-                  style={styles.fullWidthItem}
-                >
-                  <Text style={styles.fullWidthText}>{item.label}</Text>
-                </TouchableOpacity>
-              )}
+              renderItem={renderItem}
               ListEmptyComponent={
-                <Text style={{ textAlign: "center", color: "gray" }}>
+                <Text style={{ textAlign: "center", color: "gray", padding: 16 }}>
                   No locations found
                 </Text>
               }
               keyboardShouldPersistTaps="always"
-              contentContainerStyle={{ width: "100%" }}
+              contentContainerStyle={{ width: "100%", paddingBottom: 16 }}
               style={{ width: "100%" }}
               nestedScrollEnabled={true}
             />
@@ -276,34 +283,13 @@ export default function HerosSection({ setSelectedCity }) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
     marginTop: 0,
     paddingHorizontal: 10,
-  },
-  tabContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: -10,
-    gap: 4,
-  },
-  tab: {
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 30,
-    zIndex: 1,
-  },
-  tabHighlight: {
-    position: "absolute",
-    height: "80%",
-    backgroundColor: "#1D3A76",
-    borderRadius: 8,
-    left: 3,
-    zIndex: -1,
   },
   searchContainer: {
     width: "100%",
@@ -314,13 +300,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     elevation: 1,
-     ...(Platform.OS !== "ios" && {
+    ...(Platform.OS !== "ios" && {
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 5,
     }),
-   
   },
   cityButton: {
     paddingHorizontal: 10,
@@ -367,31 +352,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-  suggestionsList: {
-    position: "absolute",
-    top: 1,
-    left: 0,
-    right: 0,
-    backgroundColor: "white",
-    maxHeight: 200,
-    borderRadius: 8,
-    elevation: 5,
-    zIndex: 999,
-  },
   loaderContainer: {
     paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
-  },
-  suggestionItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-  },
-  suggestionText: {
-    fontSize: 16,
-    color: "#333",
   },
   actionsheetInput: {
     width: "100%",

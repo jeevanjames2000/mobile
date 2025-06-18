@@ -601,7 +601,7 @@ const SearchBarProperty = ({
               style={styles.searchIcon}
             />
             <TextInput
-              placeholder="Search city "
+              placeholder="Search Locality "
               placeholderTextColor="#999"
               value={localSearchQuery}
               onChangeText={handleSearch}

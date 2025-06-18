@@ -3,7 +3,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Alert,
   Platform,
 } from "react-native";
 import {
@@ -21,11 +20,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
-import * as Location from "expo-location";
 import { BackHandler } from "react-native";
 import {
   setCities,
-  setDeviceLocation,
 } from "../../../store/slices/propertyDetails";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -58,18 +55,17 @@ export default function SearchBox() {
     location,
     property_cost,
     property_for,
+    city,
   } = useSelector((state) => state.search, shallowEqual);
   const searchData = useSelector((state) => state.search);
+  
   const cities = useSelector((state) => state.property.cities, shallowEqual);
   const [locations, setLocations] = useState([]);
   const [filteredLocations, setFilteredLocations] = useState([]);
   const [searchQuery, setSearchQuery] = useState(location || "");
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [userLocation, setUserLocation] = useState(location || "");
-  const [selectedPropertyType, setSelectedPropertyType] = useState(
-    tab || "Retail Shop"
-  );
+  const [selectedPropertyType, setSelectedPropertyType] = useState(tab || "Buy");
   const [selectedBuildingType, setSelectedBuildingType] = useState(
     property_in || "Residential"
   );
@@ -215,7 +211,7 @@ export default function SearchBox() {
   const toggleAmenity = (type) =>
     setSelectedAmenities((prev) =>
       prev.includes(type)
-        ? prev.filter((item) => item !== item)
+        ? prev.filter((item) => item !== type)
         : [...prev, type]
     );
 
@@ -258,28 +254,36 @@ export default function SearchBox() {
           const parsedCities = JSON.parse(storedCities);
           dispatch(setCities(parsedCities));
         } else {
-          // Fetch from API if not in storage
-          const response = await fetch("https://api.meetowner.in/api/v1/getAllCities");
+          const response = await fetch(
+            "https://api.meetowner.in/api/v1/getAllCities"
+          );
           const data = await response.json();
           const formattedCities = data.map((cityObj) => ({
             label: cityObj.city,
             value: cityObj.city,
           }));
           dispatch(setCities(formattedCities));
-          await AsyncStorage.setItem("cachedCities", JSON.stringify(formattedCities));
+          await AsyncStorage.setItem(
+            "cachedCities",
+            JSON.stringify(formattedCities)
+          );
         }
       } catch (error) {
         console.error("Error loading cities:", error);
-        // Fallback to API fetch if storage fails
         try {
-          const response = await fetch("https://api.meetowner.in/api/v1/getAllCities");
+          const response = await fetch(
+            "https://api.meetowner.in/api/v1/getAllCities"
+          );
           const data = await response.json();
           const formattedCities = data.map((cityObj) => ({
             label: cityObj.city,
             value: cityObj.city,
           }));
           dispatch(setCities(formattedCities));
-          await AsyncStorage.setItem("cachedCities", JSON.stringify(formattedCities));
+          await AsyncStorage.setItem(
+            "cachedCities",
+            JSON.stringify(formattedCities)
+          );
         } catch (fetchError) {
           console.error("Error fetching cities from API:", fetchError);
         }
@@ -289,57 +293,27 @@ export default function SearchBox() {
     };
 
     loadCitiesFromStorage();
-    getUserLocation();
   }, [dispatch]);
-
-  const getUserLocation = async () => {
-    setLoading(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "Location access is required.");
-        dispatch(setDeviceLocation("Unknown City"));
-        return;
-      }
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
-      const { latitude, longitude } = location.coords;
-      const geocode = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
-      if (geocode.length > 0) {
-        const city = geocode[0]?.city || "Unknown City";
-        setUserLocation(city);
-        dispatch(setDeviceLocation(city));
-      }
-    } catch (error) {
-      console.error("Error getting user location:", error);
-      dispatch(setDeviceLocation("Unknown City"));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     setLocations(cities);
     setFilteredLocations(cities);
-    if (userLocation && cities.length > 0) {
+    if (city && cities.length > 0) {
       const matchedCity = cities.find(
-        (city) => city.label.toLowerCase() === userLocation.toLowerCase()
+        (c) => c.label.toLowerCase() === city.toLowerCase()
       );
       if (matchedCity) {
         setSelectedLocation({
           label: matchedCity.label,
           value: matchedCity.value,
         });
-        dispatch(setCity(matchedCity.label));
       } else {
         setSelectedLocation(null);
       }
+    } else {
+      setSelectedLocation(null);
     }
-  }, [cities, userLocation, dispatch]);
+  }, [city, cities]);
 
   const handleCitySearch = (query) => {
     setSearchQuery(query);
@@ -354,7 +328,7 @@ export default function SearchBox() {
 
   const handleCitySelect = (item) => {
     setSelectedLocation(item);
-    dispatch(setCity(item.label));
+    dispatch(setCity(item.label)); // Dispatch setCity
     onClose();
     setSearchQuery("");
   };
@@ -426,6 +400,7 @@ export default function SearchBox() {
         plot_subType: "Buy",
         commercial_subType: "Buy",
         property_cost: "",
+        city: "", // Clear city in Redux
       })
     );
     Toast.show({
@@ -469,8 +444,8 @@ export default function SearchBox() {
   const possessionStatuses = property_for === "Rent"
     ? ["Ready to move In"]
     : isPlotOrLand
-    ? ["Future", "Immediate"]
-    : ["Ready to move", "Under Construction"];
+      ? ["Future", "Immediate"]
+      : ["Ready to move", "Under Construction"];
 
   return (
     <View style={styles.container}>
@@ -484,7 +459,7 @@ export default function SearchBox() {
             <TouchableOpacity style={styles.cityButton} onPress={onOpen}>
               <HStack space={1} alignItems="center">
                 <Text style={styles.cityText}>
-                  {selectedLocation?.label || "Select City"}
+                  {selectedLocation?.label || city || "Select City"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="gray" />
               </HStack>
@@ -669,6 +644,7 @@ export default function SearchBox() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

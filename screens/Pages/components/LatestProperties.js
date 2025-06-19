@@ -56,15 +56,15 @@ const PropertyCard = memo(
         : "N/A",
       location: item?.google_address || "N/A",
       area: item?.area || "N/A",
-      facing: item?.facing || "N/A",
+      facing: item?.facing || "",
       forSale: item?.property_for === "Sell",
-      bedrooms: item?.bedrooms || "N/A",
-      bathrooms: item?.bathroom || "N/A",
-      car_parking: item?.car_parking || "N/A",
-      bike_parking: item?.bike_parking || "N/A",
+      bedrooms: item?.bedrooms || "",
+      bathrooms: item?.bathroom || "",
+      car_parking: item?.car_parking || "",
+      bike_parking: item?.bike_parking || "",
     };
     return (
-      <View style={[styles.cardContainer]}>
+      <View style={[styles.cardContainer, isHighlighted && styles.highlighted]}>
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => onPress && onPress(item)}
@@ -114,52 +114,54 @@ const PropertyCard = memo(
               </Text>
             </View>
             <View style={styles.featuresContainer}>
-              <View style={styles.featureItem}>
-                <View style={styles.directionIcon}>
+              {property.facing && (
+                <View style={styles.featureItem}>
+                  <View style={styles.directionIcon}>
+                    <Image
+                      source={direction}
+                      alt="direction"
+                      style={{ width: 12, height: 12 }}
+                    />
+                  </View>
+                  <Text style={styles.featureText}>{property.facing}</Text>
+                </View>
+              )}
+              {property.bedrooms && (
+                <View style={styles.featureItem}>
                   <Image
-                    source={direction}
-                    alt="direction"
+                    source={bhk}
+                    alt="bhk"
                     style={{ width: 12, height: 12 }}
                   />
+                  <Text
+                    style={styles.featureText}
+                  >{`${property.bedrooms} BHK`}</Text>
                 </View>
-                <Text style={styles.featureText}>{property.facing}</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Image
-                  source={bhk}
-                  alt="bhk"
-                  style={{ width: 12, height: 12 }}
-                />
-                <Text style={styles.featureText}>
-                  {property.bedrooms !== "N/A"
-                    ? `${property.bedrooms} BHK`
-                    : "N/A"}
-                </Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Image
-                  source={shower}
-                  alt="shower"
-                  style={{ width: 12, height: 12 }}
-                />
-                <Text style={styles.featureText}>
-                  {property.bathrooms !== "N/A"
-                    ? `${property.bathrooms} Bath`
-                    : "N/A"}
-                </Text>
-              </View>
-              <View style={styles.featureItem}>
-                <Image
-                  source={parking}
-                  alt="parking"
-                  style={{ width: 12, height: 12 }}
-                />
-                <Text style={styles.featureText}>
-                  {property.car_parking !== "N/A"
-                    ? `${property.car_parking} Parking`
-                    : "N/A"}
-                </Text>
-              </View>
+              )}
+              {property.bathrooms && (
+                <View style={styles.featureItem}>
+                  <Image
+                    source={shower}
+                    alt="shower"
+                    style={{ width: 12, height: 12 }}
+                  />
+                  <Text
+                    style={styles.featureText}
+                  >{`${property.bathrooms} Bath`}</Text>
+                </View>
+              )}
+              {property.car_parking && (
+                <View style={styles.featureItem}>
+                  <Image
+                    source={parking}
+                    alt="parking"
+                    style={{ width: 12, height: 12 }}
+                  />
+                  <Text
+                    style={styles.featureText}
+                  >{`${property.car_parking} Parking`}</Text>
+                </View>
+              )}
             </View>
             <View style={styles.divider} />
             <View style={styles.bottomContainer}>
@@ -483,13 +485,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#fdfdfd",
     marginRight: 15,
     marginVertical: 10,
-    // overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 6,
     },
-    shadowOpacity: Platform.OS !== 'ios' ? 0.25 : 0.05,
+    shadowOpacity: Platform.OS !== "ios" ? 0.25 : 0.05,
     shadowRadius: 10,
     elevation: 1,
   },
@@ -594,7 +595,6 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     paddingBottom: 5,
   },
-
   priceText: {
     fontSize: 18,
     color: "#1D3A76",

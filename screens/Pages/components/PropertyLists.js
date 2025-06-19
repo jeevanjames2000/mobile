@@ -39,7 +39,6 @@ import FilterBar from "./propertyDetailsComponents/FilterBar";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { setLocation } from "../../../store/slices/searchSlice";
 import { debounce } from "lodash";
-
 const userTypeMap = {
   3: "Builder",
   4: "Agent",
@@ -150,14 +149,14 @@ const PropertyCard = memo(
                     )}
                 </View>
               )}
-               {(item.property_for === "Rent" ) && (
+              {item.property_for === "Rent" && (
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   {item?.occupancy === "Ready To Move In" && (
                     <Text style={styles.possessionText}>Ready to move In</Text>
                   )}
                 </View>
               )}
-              {(item.sub_type === "Plot" || item.sub_type === "Land" ) && (
+              {(item.sub_type === "Plot" || item.sub_type === "Land") && (
                 <Text style={styles.possessionText}>
                   {item.possession_status?.toLowerCase() === "immediate"
                     ? "Immediate"
@@ -168,24 +167,23 @@ const PropertyCard = memo(
                 <Text style={styles.possessionText}>{item.occupancy}</Text>
               )}
               <>
-            {(item.sub_type === "Land" && item.total_project_area) ||
-            (item.sub_type === "Plot" && item.plot_area) ||
-            item.builtup_area ? (
-              <>
-                <Text style={styles.possesionText}>|</Text>
-                <Text style={styles.possesionText}>
-                  {item.sub_type === "Land" && item.total_project_area
-                    ? `${formatValue(item.total_project_area)} acres`
-                    : item.sub_type === "Plot" && item.plot_area
-                    ? `${formatValue(item.plot_area)} sqyd`
-                    : item.builtup_area
-                    ? `${formatValue(item.builtup_area)} sqft`
-                    : null}
-                </Text>
+                {(item.sub_type === "Land" && item.total_project_area) ||
+                (item.sub_type === "Plot" && item.plot_area) ||
+                item.builtup_area ? (
+                  <>
+                    <Text style={styles.possesionText}>|</Text>
+                    <Text style={styles.possesionText}>
+                      {item.sub_type === "Land" && item.total_project_area
+                        ? `${formatValue(item.total_project_area)} acres`
+                        : item.sub_type === "Plot" && item.plot_area
+                        ? `${formatValue(item.plot_area)} sqyd`
+                        : item.builtup_area
+                        ? `${formatValue(item.builtup_area)} sqft`
+                        : null}
+                    </Text>
+                  </>
+                ) : null}
               </>
-            ) : null}
-          </>
-              
             </HStack>
             <VStack style={styles.contentContainer}>
               <HStack justifyContent="space-between" alignItems="center">
@@ -222,8 +220,11 @@ const PropertyCard = memo(
                 alignItems="center"
               >
                 <Text style={styles.propertyText}>
-                  ₹ {item.property_for === 'Rent' ? formatToIndianCurrency(item.monthly_rent || 0) : 
-                  formatToIndianCurrency(item.property_cost || 0)} {item.property_cost_type }
+                  ₹{" "}
+                  {item.property_for === "Rent"
+                    ? formatToIndianCurrency(item.monthly_rent || 0)
+                    : formatToIndianCurrency(item.property_cost || 0)}{" "}
+                  {item.property_cost_type}
                 </Text>
               </HStack>
               {item.sub_type === "Apartment" ||
@@ -234,7 +235,8 @@ const PropertyCard = memo(
                 </Text>
               ) : (
                 <Text style={styles.propertyText}>
-                {item.property_in || "N/A"} | {item.sub_type || "N/A"} {item.land_sub_type ? `| ${item.land_sub_type}` : ""} 
+                  {item.property_in || "N/A"} | {item.sub_type || "N/A"}{" "}
+                  {item.land_sub_type ? `| ${item.land_sub_type}` : ""}
                 </Text>
               )}
             </VStack>
@@ -311,7 +313,9 @@ const mapTabToPropertyFor = (tab) => {
 const formatToIndianCurrency = (value) => {
   if (value >= 10000000) {
     const crores = value / 10000000;
-    return Math.floor(crores) === crores ? crores + " Cr" : crores.toFixed(2) + " Cr";
+    return Math.floor(crores) === crores
+      ? crores + " Cr"
+      : crores.toFixed(2) + " Cr";
   }
   if (value >= 100000) {
     const lakhs = value / 100000;
@@ -319,11 +323,12 @@ const formatToIndianCurrency = (value) => {
   }
   if (value >= 1000) {
     const thousands = value / 1000;
-    return Math.floor(thousands) === thousands ? thousands + " K" : thousands.toFixed(2) + " K";
+    return Math.floor(thousands) === thousands
+      ? thousands + " K"
+      : thousands.toFixed(2) + " K";
   }
   return value.toString();
 };
-
 export default function PropertyLists({ route }) {
   const intrestedProperties = useSelector(
     (state) => state.property.intrestedProperties
@@ -370,11 +375,8 @@ export default function PropertyLists({ route }) {
     occupancy: occupancy || "",
     possession_status: possession_status || "",
     property_status: 1,
-    city:city,
-   
-    
+    city_id: city,
   });
-  
   const mapPriceFilterToApiValue = (priceFilter) => {
     const validFilters = [
       "Relevance",
@@ -384,9 +386,54 @@ export default function PropertyLists({ route }) {
     ];
     return validFilters.includes(priceFilter) ? priceFilter : "Relevance";
   };
+  const handleUserSearched = useCallback(
+    async (searchValue) => {
+      let userDetailsLocal = userDetails;
+      if (!userDetailsLocal) {
+        try {
+          const data = await AsyncStorage.getItem("userdetails");
+          if (data) {
+            userDetailsLocal = JSON.parse(data);
+            setUserDetails(userDetailsLocal);
+          }
+        } catch (error) {
+          console.error("Error parsing AsyncStorage data:", error);
+          userDetailsLocal = null;
+        }
+      }
+      if (userDetailsLocal?.user_id && city) {
+        const viewData = {
+          user_id: userDetailsLocal.user_id,
+          searched_location: searchValue || "N/A",
+          searched_for: tab || "N/A",
+          name: userDetailsLocal?.name || "N/A",
+          mobile: userDetailsLocal?.mobile || "N/A",
+          email: userDetailsLocal?.email || "N/A",
+          searched_city: city || "N/A",
+          property_in: property_in || "N/A",
+          sub_type: sub_type || "N/A",
+          occupancy: occupancy || "N/A",
+        };
+        try {
+          await axios.post(
+            `${config.awsApiUrl}/enquiry/v1/userActivity`,
+            viewData
+          );
+        } catch (error) {
+          console.error("Failed to record property view:", {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+          });
+        }
+      }
+    },
+    [tab, city, property_in, sub_type, occupancy, userDetails]
+  );
   const debouncedFetchProperties = useCallback(
-    debounce((reset, appliedFilters) => {
+    debounce((reset, appliedFilters, searchValue) => {
       fetchProperties(reset, appliedFilters);
+      handleUserSearched(searchValue);
     }, 3000),
     []
   );
@@ -414,13 +461,16 @@ export default function PropertyLists({ route }) {
       priceFilter: price || "Relevance",
       property_cost: property_cost || "",
       property_status: 1,
-      city:city
+      city_id: city,
     };
     setFilters(updatedFilters);
     setSearchQuery(location || "");
     setPage(1);
     setProperties([]);
     fetchProperties(true, updatedFilters);
+    if (location) {
+      handleUserSearched(location);
+    }
   }, [
     tab,
     property_in,
@@ -430,8 +480,10 @@ export default function PropertyLists({ route }) {
     location,
     price,
     property_cost,
+    city,
+    fetchProperties,
+    handleUserSearched,
   ]);
-
   const fetchProperties = useCallback(
     async (reset = false, appliedFilters = filters) => {
       if (!hasMore && !reset) return;
@@ -466,10 +518,9 @@ export default function PropertyLists({ route }) {
             ? { possession_status: appliedFilters.possession_status || "" }
             : { occupancy: appliedFilters.occupancy || "" }),
           property_status: "1",
-          city:city
+          city_id: city,
         }).toString();
         const url = `https://api.meetowner.in/listings/v1/getAllPropertiesByType?${queryParams}`;
- 
         const response = await fetch(url);
         if (!response.ok) throw new Error(`API error: ${response.status}`);
         const data = await response.json();
@@ -499,7 +550,7 @@ export default function PropertyLists({ route }) {
         if (reset) setRefreshing(false);
       }
     },
-    [page, hasMore]
+    [page, hasMore, city]
   );
   useEffect(() => {
     const getData = async () => {
@@ -519,7 +570,6 @@ export default function PropertyLists({ route }) {
     };
     getData();
   }, []);
-
   const handleAPI = async (item) => {
     const owner = await getOwnerDetails(item.unique_property_id);
     const payload = {
@@ -674,7 +724,6 @@ export default function PropertyLists({ route }) {
       console.error("Error sharing property:", error);
     }
   };
-
   const handleShare = useCallback((item) => {
     shareProperty(item);
   }, []);
@@ -791,17 +840,24 @@ export default function PropertyLists({ route }) {
       fetchProperties(false);
     }
   }, [paginationLoading, hasMore, fetchProperties]);
-  const handleLocationSearch = useCallback(
-    (query) => {
+  const debouncedHandleLocationSearch = useCallback(
+    debounce((query) => {
       setSearchQuery(query);
       dispatch(setLocation(query));
       const updatedFilters = { ...filters, search: query };
       setFilters(updatedFilters);
       setPage(1);
       setProperties([]);
-      debouncedFetchProperties(true, updatedFilters);
+      fetchProperties(true, updatedFilters);
+      handleUserSearched(query);
+    }, 1000),
+    [filters, dispatch, fetchProperties, handleUserSearched]
+  );
+  const handleLocationSearch = useCallback(
+    (query) => {
+      debouncedHandleLocationSearch(query);
     },
-    [filters, debouncedFetchProperties, dispatch]
+    [debouncedHandleLocationSearch]
   );
   return (
     <>

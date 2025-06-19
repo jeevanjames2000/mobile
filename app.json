@@ -31,7 +31,7 @@
       "config": {
         "googleMapsApiKey": "AIzaSyBmei9lRUUfJI-kLIPNBoc2SxEkwhKHyvU"
       },
-      "buildNumber": "2.1",
+      "buildNumber": "2.2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "MeetOwner needs access to your location to display nearby properties based on your current location, improving property search results.",
         "NSLocationAlwaysUsageDescription": "MeetOwner needs access to your location in the background to provide continuous property suggestions and improve location-based services.",
@@ -48,7 +48,7 @@
     },
     "android": {
       "googleServicesFile": "./google-services.json",
-      "versionCode": 29,
+      "versionCode": 30,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBmei9lRUUfJI-kLIPNBoc2SxEkwhKHyvU"

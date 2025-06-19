@@ -469,7 +469,7 @@ export default function PropertyLists({ route }) {
           city:city
         }).toString();
         const url = `https://api.meetowner.in/listings/v1/getAllPropertiesByType?${queryParams}`;
-        console.log(url);
+ 
         const response = await fetch(url);
         if (!response.ok) throw new Error(`API error: ${response.status}`);
         const data = await response.json();

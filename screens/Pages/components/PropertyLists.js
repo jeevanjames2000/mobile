@@ -167,16 +167,25 @@ const PropertyCard = memo(
               {["Others", "Office", "Retail Shop"].includes(item.sub_type) && (
                 <Text style={styles.possessionText}>{item.occupancy}</Text>
               )}
-              <Text style={styles.possesionText}>|</Text>
-              <Text style={styles.possesionText}>
-              {item.sub_type === "Land" && item.plot_area
-                ? `${item.total_project_area} acres` 
-                : item.sub_type === "Plot" && item.plot_area
-                ? `${formatValue(item.plot_area)} sqyd`
-                : item.builtup_area
-                ? `${formatValue(item.builtup_area)} sqft`
-                : `${formatValue(item.length_area || 0)} x ${formatValue(item.width_area || 0)} sqft`}
-            </Text>
+              <>
+            {(item.sub_type === "Land" && item.total_project_area) ||
+            (item.sub_type === "Plot" && item.plot_area) ||
+            item.builtup_area ? (
+              <>
+                <Text style={styles.possesionText}>|</Text>
+                <Text style={styles.possesionText}>
+                  {item.sub_type === "Land" && item.total_project_area
+                    ? `${formatValue(item.total_project_area)} acres`
+                    : item.sub_type === "Plot" && item.plot_area
+                    ? `${formatValue(item.plot_area)} sqyd`
+                    : item.builtup_area
+                    ? `${formatValue(item.builtup_area)} sqft`
+                    : null}
+                </Text>
+              </>
+            ) : null}
+          </>
+              
             </HStack>
             <VStack style={styles.contentContainer}>
               <HStack justifyContent="space-between" alignItems="center">
@@ -225,7 +234,7 @@ const PropertyCard = memo(
                 </Text>
               ) : (
                 <Text style={styles.propertyText}>
-                  {item.property_in || "N/A"} | {item.sub_type || "N/A"} | {item.land_sub_type}
+                {item.property_in || "N/A"} | {item.sub_type || "N/A"} {item.land_sub_type ? `| ${item.land_sub_type}` : ""} 
                 </Text>
               )}
             </VStack>
@@ -361,7 +370,7 @@ export default function PropertyLists({ route }) {
     occupancy: occupancy || "",
     possession_status: possession_status || "",
     property_status: 1,
-    city_id:city,
+    city:city,
    
     
   });
@@ -405,7 +414,7 @@ export default function PropertyLists({ route }) {
       priceFilter: price || "Relevance",
       property_cost: property_cost || "",
       property_status: 1,
-      city_id:city
+      city:city
     };
     setFilters(updatedFilters);
     setSearchQuery(location || "");
@@ -457,7 +466,7 @@ export default function PropertyLists({ route }) {
             ? { possession_status: appliedFilters.possession_status || "" }
             : { occupancy: appliedFilters.occupancy || "" }),
           property_status: "1",
-          city_id:city
+          city:city
         }).toString();
         const url = `https://api.meetowner.in/listings/v1/getAllPropertiesByType?${queryParams}`;
         console.log(url);

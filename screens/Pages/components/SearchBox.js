@@ -80,14 +80,14 @@ export default function SearchBox() {
   const [selectedPossession, setSelectedPossession] = useState(occupancy || "");
   const inputRef = useRef(null);
 
-  const mapTabToPropertyFor = (tab) => {
+  const mapTabToPropertyFor = (type) => {
     const mapping = {
       Buy: "Sell",
       Rent: "Rent",
       Plot: "Sell",
       Commercial: "Sell",
     };
-    return mapping[tab] || "Sell";
+    return mapping[type] || "Sell";
   };
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function SearchBox() {
       property_in: "",
       sub_type: "",
       bhk: null,
-      occupancy: "",
+      occupancy: propertyFor === "Rent" ? "" : occupancy,
       property_cost: propertyFor === "Rent" ? "" : property_cost,
     };
     if (type === "Plot") {
@@ -131,9 +131,10 @@ export default function SearchBox() {
     setSelectedBuildingType(payload.property_in || "Residential");
     setSelectedSubPropertyType(payload.sub_type || "Apartment");
     setSelectedBedrooms("");
-    setSelectedPossession("");
+    setSelectedPossession(propertyFor === "Rent" ? "" : selectedPossession);
     setSelectedBudget(propertyFor === "Rent" ? "" : selectedBudget);
     dispatch(setSearchData(payload));
+    dispatch(setPossesionStatus(propertyFor === "Rent" ? "" : occupancy));
   };
 
   const toggleBuildingType = (type) => {
@@ -228,20 +229,18 @@ export default function SearchBox() {
 
   const togglePossession = (type) => {
     const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
-    const validPossessionStatuses = property_for === "Rent"
-      ? ["Ready to move In"]
-      : isPlotOrLand
+    const validPossessionStatuses = isPlotOrLand
       ? ["Future", "Immediate"]
       : ["Ready to move", "Under Construction"];
 
-    if (validPossessionStatuses.includes(type)) {
+    if (property_for === "Rent") {
+      setSelectedPossession("");
+      dispatch(setOccupancy(""));
+      dispatch(setPossesionStatus(""));
+    } else if (validPossessionStatuses.includes(type)) {
       setSelectedPossession(type);
       dispatch(setOccupancy(type));
       dispatch(setPossesionStatus(type));
-    } else if (property_for === "Rent" && type !== "Ready to move") {
-      setSelectedPossession("Ready to move");
-      dispatch(setOccupancy("Ready to move"));
-      dispatch(setPossesionStatus("Ready to move"));
     }
   };
 
@@ -328,7 +327,7 @@ export default function SearchBox() {
 
   const handleCitySelect = (item) => {
     setSelectedLocation(item);
-    dispatch(setCity(item.label)); // Dispatch setCity
+    dispatch(setCity(item.label)); 
     onClose();
     setSearchQuery("");
   };
@@ -400,9 +399,10 @@ export default function SearchBox() {
         plot_subType: "Buy",
         commercial_subType: "Buy",
         property_cost: "",
-        city: "", // Clear city in Redux
+        city: "",
       })
     );
+    dispatch(setPossesionStatus(""));
     Toast.show({
       duration: 1000,
       placement: "top-right",
@@ -441,11 +441,9 @@ export default function SearchBox() {
       ? commercialPropertyTypes
       : residentialPropertyTypes;
   const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
-  const possessionStatuses = property_for === "Rent"
-    ? ["Ready to move In"]
-    : isPlotOrLand
-      ? ["Future", "Immediate"]
-      : ["Ready to move", "Under Construction"];
+  const possessionStatuses = isPlotOrLand
+    ? ["Future", "Immediate"]
+    : ["Ready to move", "Under Construction"];
 
   return (
     <View style={styles.container}>
@@ -580,18 +578,20 @@ export default function SearchBox() {
             </View>
           </FilterSection>
         )}
-        <FilterSection title="Possession Status">
-          <View style={styles.filterOptionsRow}>
-            {possessionStatuses.map((status) => (
-              <FilterOption
-                key={status}
-                label={status}
-                selected={selectedPossession === status}
-                onPress={() => togglePossession(status)}
-              />
-            ))}
-          </View>
-        </FilterSection>
+        {(tab !== "Rent" && searchData.property_for !== "Rent") && (
+          <FilterSection title="Possession Status">
+            <View style={styles.filterOptionsRow}>
+              {possessionStatuses.map((status) => (
+                <FilterOption
+                  key={status}
+                  label={status}
+                  selected={selectedPossession === status}
+                  onPress={() => togglePossession(status)}
+                />
+              ))}
+            </View>
+          </FilterSection>
+        )}
         <View style={styles.bottomSpacing} />
       </ScrollView>
       <TouchableOpacity

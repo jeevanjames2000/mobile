@@ -244,15 +244,13 @@ export default function HerosSection({ setSelectedCity }) {
       <Actionsheet isOpen={isOpen} onClose={onClose}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1, width: "100%" }}
+          style={{  width: "100%" }}
         >
           <Actionsheet.Content
-            style={{
-              justifyContent: "flex-start",
-              alignItems: "flex-start",
-              maxHeight: "80%", // Responsive height
-              width: "100%",
-            }}
+             justifyContent="flex-start"
+            alignItems="flex-start"
+            maxHeight={500}
+            width="100%"
           >
             <TextInput
               placeholder="Search city"
@@ -261,7 +259,7 @@ export default function HerosSection({ setSelectedCity }) {
               onChangeText={handleCitySearch}
               style={styles.actionsheetInput}
               ref={inputRef}
-              autoFocus={false} // Controlled by useEffect
+              
             />
             <FlatList
               data={filteredLocations}
@@ -273,7 +271,7 @@ export default function HerosSection({ setSelectedCity }) {
                 </Text>
               }
               keyboardShouldPersistTaps="always"
-              contentContainerStyle={{ width: "100%", paddingBottom: 16 }}
+              contentContainerStyle={{ width: "100%" }}
               style={{ width: "100%" }}
               nestedScrollEnabled={true}
             />

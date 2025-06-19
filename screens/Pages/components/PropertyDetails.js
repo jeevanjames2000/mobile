@@ -507,8 +507,8 @@ const formatToIndianCurrency = (value) => {
               {["Apartment", "Independent House", "Independent Villa"].includes(
                 property.sub_type
               )
-                ? `| ${property.bedrooms} BHK ${property.sub_type} for Sale`
-                : `${property.sub_type} for Sale`}
+                ? `| ${property.bedrooms} BHK ${property.sub_type} for ${property.property_for}`
+                : `${property.sub_type} for ${property.property_for}`}
             </Text>
           </HStack>
         </View>
@@ -523,7 +523,7 @@ const formatToIndianCurrency = (value) => {
                 </Text>
               </View>
 
-              {property?.sub_type !== "Plot" &&
+            {property.builtup_area !== null &&   (property?.sub_type !== "Plot" &&
                 property?.sub_type !== "Land" && (
                   <View style={styles.overviewItem}>
                     <Text style={styles.overviewLabel}>Built-up Area</Text>
@@ -531,7 +531,8 @@ const formatToIndianCurrency = (value) => {
                       {formatValue(property.builtup_area)} {property.area_units}
                     </Text>
                   </View>
-                )}
+                ))
+              }
 
               {(property?.sub_type === "Plot" ||
                 property?.sub_type === "Land") && (
@@ -543,12 +544,12 @@ const formatToIndianCurrency = (value) => {
                 </View>
               )}
 
-              <View style={styles.overviewItem}>
+              {(property.possession_status !== null || property.occupancy !== null) && ( <View style={styles.overviewItem}>
                 <Text style={styles.overviewLabel}>Occupancy Status</Text>
                 <Text style={styles.overviewValue}>
                   {property.possession_status || property.occupancy}
                 </Text>
-              </View>
+              </View>)}
               <View style={styles.overviewItem}>
                 <Text style={styles.overviewLabel}>Property Type</Text>
                 <Text style={styles.overviewValue}>{property.property_in}</Text>
@@ -569,11 +570,83 @@ const formatToIndianCurrency = (value) => {
                   </Text>
                 </View>
               )}
+              {property.balconies > 0 && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Balconies</Text>
+                  <Text style={styles.overviewValue}>
+                    {property?.balconies || 0}
+                  </Text>
+                </View>
+              )}
+               {property.bike_parking > 0 && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>bike Parking</Text>
+                  <Text style={styles.overviewValue}>
+                    {property.bike_parking || 0}
+                  </Text>
+                </View>
+              )}
               {property.car_parking > 0 && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Car Parking</Text>
                   <Text style={styles.overviewValue}>
                     {property.car_parking || 0}
+                  </Text>
+                </View>
+              )}
+               {property.rera_approved == 1 && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>RERA Approved</Text>
+                  <Text style={styles.overviewValue}>
+                    Yes
+                  </Text>
+                </View>
+              )}
+              {property.passenger_lifts > 0 && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Passenger Lifts</Text>
+                  <Text style={styles.overviewValue}>
+                   {property.passenger_lifts || 0}
+                  </Text>
+                </View>
+              )}
+              {property.service_lifts > 0 && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Service Lifts</Text>
+                  <Text style={styles.overviewValue}>
+                   {property.service_lifts || 0}
+                  </Text>
+                </View>
+              )}
+               {property.private_parking > 0 && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Private Parking</Text>
+                  <Text style={styles.overviewValue}>
+                   {property.private_parking || 0}
+                  </Text>
+                </View>
+              )}
+               {property.public_parking > 0 && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Public Parking</Text>
+                  <Text style={styles.overviewValue}>
+                   {property.public_parking || 0}
+                  </Text>
+                </View>
+              )}
+              {property.stair_cases > 0 && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Stair Cases</Text>
+                  <Text style={styles.overviewValue}>
+                   {property.stair_cases || 0}
+                  </Text>
+                </View>
+              )}
+              {property.pantry_room === "Yes" && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Pantry Room</Text>
+                  <Text style={styles.overviewValue}>
+                   Yes
                   </Text>
                 </View>
               )}
@@ -587,6 +660,38 @@ const formatToIndianCurrency = (value) => {
                   {property.furnished_status || "No"}
                 </Text>
               </View>
+               {property.security_deposit !== null && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Security Deposit</Text>
+                  <Text style={styles.overviewValue}>
+                    {Number.parseFloat(property.security_deposit).toFixed(0)} Months
+                  </Text>
+                </View>
+              )}
+               {property.maintenance !== null && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Maintenance </Text>
+                  <Text style={styles.overviewValue}>
+                    {formatToIndianCurrency(property.maintenance || 0)}
+                  </Text>
+                </View>
+              )}
+               {property.lock_in !== null && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Lock in period </Text>
+                  <Text style={styles.overviewValue}>
+                    {Number.parseFloat(property.lock_in).toFixed(0)} Months
+                  </Text>
+                </View>
+              )}
+              {property.brokerage_charge !== null && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Brokerage Charge </Text>
+                  <Text style={styles.overviewValue}>
+                      {formatToIndianCurrency(property.brokerage_charge || 0)}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>

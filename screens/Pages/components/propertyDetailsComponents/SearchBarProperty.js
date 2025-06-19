@@ -146,9 +146,7 @@ const SearchBarProperty = ({
       ? commercialPropertyTypes
       : residentialPropertyTypes;
   const isPlotOrLand = ["Plot", "Land"].includes(selectedSubPropertyType);
-  const possessionStatuses = property_for === "Rent"
-    ? ["Ready to move In"]
-    : isPlotOrLand
+  const possessionStatuses = isPlotOrLand
     ? ["Immediate", "Future"]
     : ["Ready to move", "Under Construction"];
 
@@ -338,7 +336,7 @@ const SearchBarProperty = ({
       property_in: selectedBuildingType || "Residential",
       sub_type: selectedSubPropertyType || "Apartment",
       bhk: selectedBedrooms || null,
-      possession_status: selectedPossession || "",
+      possession_status: type === "Rent" ? "" : selectedPossession,
       location: localSearchQuery,
       price: selectedSort,
       property_cost: type === "Rent" ? "" : selectedBudget,
@@ -362,9 +360,7 @@ const SearchBarProperty = ({
       setSelectedBedrooms("");
       payload.bhk = null;
     }
-    setSelectedPossession("");
-    payload.possession_status = "";
-    setSelectedBudget(type === "Rent" ? "" : selectedBudget);
+    setSelectedPossession(type === "Rent" ? "" : selectedPossession);
     dispatch(setSearchData(payload));
   };
 
@@ -382,7 +378,7 @@ const SearchBarProperty = ({
       property_in: type,
       sub_type: newSubType,
       bhk: type === "Commercial" ? null : selectedBedrooms,
-      possession_status: "",
+      possession_status: selectedPropertyType === "Rent" ? "" : "",
       location: localSearchQuery,
       price: selectedSort,
       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
@@ -394,7 +390,7 @@ const SearchBarProperty = ({
       setSelectedBedrooms("");
       payload.bhk = null;
     }
-    setSelectedPossession("");
+    setSelectedPossession(selectedPropertyType === "Rent" ? "" : "");
     dispatch(setSearchData(payload));
   };
 
@@ -410,16 +406,17 @@ const SearchBarProperty = ({
       property_in: selectedBuildingType,
       sub_type: type,
       bhk: ["Plot", "Land", "Others"].includes(type) ? null : selectedBedrooms,
-      possession_status: "",
+      possession_status: selectedPropertyType === "Rent" ? "" : "",
       location: localSearchQuery,
       price: selectedSort,
+      property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
     };
     if (["Plot", "Land", "Others"].includes(type)) {
       setSelectedBedrooms("");
       payload.bhk = null;
       dispatch(setPlotSubType(selectedPropertyType));
     }
-    setSelectedPossession("");
+    setSelectedPossession(selectedPropertyType === "Rent" ? "" : "");
     dispatch(setSearchData(payload));
   };
 
@@ -436,7 +433,7 @@ const SearchBarProperty = ({
         property_in: selectedBuildingType,
         sub_type: selectedSubPropertyType,
         bhk: type,
-        possession_status: selectedPossession,
+        possession_status: selectedPropertyType === "Rent" ? "" : selectedPossession,
         location: localSearchQuery,
         price: selectedSort,
         property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
@@ -445,13 +442,31 @@ const SearchBarProperty = ({
   };
 
   const togglePossession = (type) => {
-    const validPossessionStatuses = property_for === "Rent"
-      ? ["Ready to move In"]
-      : isPlotOrLand
+    const validPossessionStatuses = isPlotOrLand
       ? ["Immediate", "Future"]
       : ["Ready to move", "Under Construction"];
 
-    if (validPossessionStatuses.includes(type)) {
+    if (property_for === "Rent") {
+      setSelectedPossession("");
+      dispatch(
+        setSearchData({
+          tab: selectedPropertyType,
+          property_for: ["Plot", "Land"].includes(selectedSubPropertyType)
+            ? selectedPropertyType === "Buy"
+              ? "Sell"
+              : "Rent"
+            : mapTabToPropertyFor(selectedPropertyType),
+          property_in: selectedBuildingType,
+          sub_type: selectedSubPropertyType,
+          bhk: selectedBedrooms,
+          occupancy: "",
+          possession_status: "",
+          location: localSearchQuery,
+          price: selectedSort,
+          property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
+        })
+      );
+    } else if (validPossessionStatuses.includes(type)) {
       setSelectedPossession(type);
       dispatch(
         setSearchData({
@@ -471,26 +486,6 @@ const SearchBarProperty = ({
           property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
         })
       );
-    } else if (property_for === "Rent" && type !== "Ready to move In") {
-      setSelectedPossession("Ready to move In");
-      dispatch(
-        setSearchData({
-          tab: selectedPropertyType,
-          property_for: ["Plot", "Land"].includes(selectedSubPropertyType)
-            ? selectedPropertyType === "Buy"
-              ? "Sell"
-              : "Rent"
-            : mapTabToPropertyFor(selectedPropertyType),
-          property_in: selectedBuildingType,
-          sub_type: selectedSubPropertyType,
-          bhk: selectedBedrooms,
-          occupancy: "Ready to move In",
-          possession_status: "Ready to move In",
-          location: localSearchQuery,
-          price: selectedSort,
-          property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
-        })
-      );
     }
   };
 
@@ -505,7 +500,7 @@ const SearchBarProperty = ({
       property_in: selectedBuildingType,
       sub_type: selectedSubPropertyType,
       bedrooms: selectedBedrooms,
-      possession_status: selectedPossession,
+      possession_status: selectedPropertyType === "Rent" ? "" : selectedPossession,
       priceFilter: selectedSort,
       search: localSearchQuery.trim() || "",
       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
@@ -518,7 +513,7 @@ const SearchBarProperty = ({
       property_in: selectedBuildingType,
       sub_type: selectedSubPropertyType,
       bhk: selectedBedrooms,
-      possession_status: selectedPossession,
+      possession_status: selectedPropertyType === "Rent" ? "" : selectedPossession,
       location: localSearchQuery.trim() || "",
       price: selectedSort,
       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
@@ -759,18 +754,20 @@ const SearchBarProperty = ({
                   </View>
                 </FilterSection>
               )}
-              <FilterSection title="Possession Status">
-                <View style={styles.filterOptionsRow}>
-                  {possessionStatuses.map((status) => (
-                    <FilterOption
-                      key={status}
-                      label={status}
-                      selected={selectedPossession === status}
-                      onPress={() => togglePossession(status)}
-                    />
-                  ))}
-                </View>
-              </FilterSection>
+              {selectedPropertyType !== "Rent" && (
+                <FilterSection title="Possession Status">
+                  <View style={styles.filterOptionsRow}>
+                    {possessionStatuses.map((status) => (
+                      <FilterOption
+                        key={status}
+                        label={status}
+                        selected={selectedPossession === status}
+                        onPress={() => togglePossession(status)}
+                      />
+                    ))}
+                  </View>
+                </FilterSection>
+              )}
             </VStack>
           </ScrollView>
           <View style={styles.submitButtonContainer}>

@@ -49,13 +49,18 @@ export default function HerosSection({ setSelectedCity }) {
       if (storedCities) {
         formattedCities = JSON.parse(storedCities);
       } else {
-        const response = await fetch("https://api.meetowner.in/api/v1/getAllCities");
+        const response = await fetch(
+          "https://api.meetowner.in/api/v1/getAllCities"
+        );
         const data = await response.json();
         formattedCities = data.map((cityObj) => ({
           label: cityObj.city,
           value: cityObj.city,
         }));
-        await AsyncStorage.setItem("cachedCities", JSON.stringify(formattedCities));
+        await AsyncStorage.setItem(
+          "cachedCities",
+          JSON.stringify(formattedCities)
+        );
       }
       dispatch(setCities(formattedCities));
       setLocations(formattedCities);
@@ -63,14 +68,19 @@ export default function HerosSection({ setSelectedCity }) {
     } catch (error) {
       console.error("Error fetching cities:", error);
       try {
-        const response = await fetch("https://api.meetowner.in/api/v1/getAllCities");
+        const response = await fetch(
+          "https://api.meetowner.in/api/v1/getAllCities"
+        );
         const data = await response.json();
         const formattedCities = data.map((cityObj) => ({
           label: cityObj.city,
           value: cityObj.city,
         }));
         dispatch(setCities(formattedCities));
-        await AsyncStorage.setItem("cachedCities", JSON.stringify(formattedCities));
+        await AsyncStorage.setItem(
+          "cachedCities",
+          JSON.stringify(formattedCities)
+        );
         setLocations(formattedCities);
         setFilteredLocations(formattedCities);
       } catch (fetchError) {
@@ -153,10 +163,7 @@ export default function HerosSection({ setSelectedCity }) {
       const fetchedData = response.data;
       if (Array.isArray(fetchedData) && fetchedData.length > 0) {
         const data = fetchedData[0];
-        await AsyncStorage.setItem(
-          "profileData",
-          JSON.stringify({ data, timestamp: new Date().getTime() })
-        );
+        await AsyncStorage.setItem("userdetails");
       }
     } catch (error) {
       console.error("Error fetching profile details:", error);
@@ -244,10 +251,10 @@ export default function HerosSection({ setSelectedCity }) {
       <Actionsheet isOpen={isOpen} onClose={onClose}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{  width: "100%" }}
+          style={{ width: "100%" }}
         >
           <Actionsheet.Content
-             justifyContent="flex-start"
+            justifyContent="flex-start"
             alignItems="flex-start"
             maxHeight={500}
             width="100%"
@@ -259,14 +266,15 @@ export default function HerosSection({ setSelectedCity }) {
               onChangeText={handleCitySearch}
               style={styles.actionsheetInput}
               ref={inputRef}
-              
             />
             <FlatList
               data={filteredLocations}
               keyExtractor={(item, index) => `${item.label}-${index}`}
               renderItem={renderItem}
               ListEmptyComponent={
-                <Text style={{ textAlign: "center", color: "gray", padding: 16 }}>
+                <Text
+                  style={{ textAlign: "center", color: "gray", padding: 16 }}
+                >
                   No locations found
                 </Text>
               }

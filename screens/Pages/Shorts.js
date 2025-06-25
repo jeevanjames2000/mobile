@@ -10,14 +10,15 @@ import {
   BackHandler,
   ActivityIndicator,
   Linking,
+  Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Box, HStack, Image, Text } from "native-base";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Box, HStack, Image, Text, Toast } from "native-base";
 import WhatsAppIcon from "../../assets/propertyicons/whatsapp.png";
 import { useDispatch } from "react-redux";
 import { setPropertyDetails } from "../../store/slices/propertyDetails";
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 const PropertyCard = memo(({ item, onPress, handleWhatsappChat }) => {
   const property = {
     image: `https://api.meetowner.in/uploads/${
@@ -36,12 +37,15 @@ const PropertyCard = memo(({ item, onPress, handleWhatsappChat }) => {
     bathrooms: item?.bathroom || "N/A",
   };
   return (
-    <TouchableOpacity onPress={() => onPress && onPress(item)}>
+    <TouchableOpacity
+      onPress={() => onPress && onPress(item)}
+      activeOpacity={0.8}
+    >
       <View style={styles.videoContainer}>
         <Image
           source={{ uri: property.image }}
           style={styles.image}
-          resizeMode="content"
+          resizeMode="cover"
           alt="shortsImage"
         />
         <View style={styles.bottomActions}>
@@ -55,18 +59,19 @@ const PropertyCard = memo(({ item, onPress, handleWhatsappChat }) => {
               borderWidth={0.5}
               alignItems="center"
               justifyContent="center"
-              display="flex"
             >
               <Text color="#fff" fontSize={12} fontWeight="extrabold">
-                {item?.property_name?.[0]}
+                {item?.property_name?.[0] || "?"}
               </Text>
             </Box>
             <View style={styles.leftContent}>
-              <Text style={styles.textContent}>{property.title}</Text>
+              <Text style={styles.textContent} numberOfLines={1}>
+                {property.title}
+              </Text>
               <Text style={styles.propertyPriceOverlay}>
                 ₹ {property.price}
               </Text>
-              <Text style={styles.highlightedFeatureText}>
+              <Text style={styles.highlightedFeatureText} numberOfLines={1}>
                 {[
                   "Apartment",
                   "Independent House",
@@ -111,7 +116,7 @@ export default function Shorts({ navigation }) {
   const dispatch = useDispatch();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState("");
+  const [userInfo, setUserInfo] = useState(null);
   const fetchProperties = useCallback(
     async (reset = true) => {
       setLoading(true);
@@ -119,6 +124,7 @@ export default function Shorts({ navigation }) {
         const response = await fetch(
           "https://api.meetowner.in/user/v1/getAllShorts"
         );
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
           const newProperties = reset ? data : [...properties, ...data];
@@ -129,6 +135,14 @@ export default function Shorts({ navigation }) {
         }
       } catch (error) {
         console.error("Error fetching properties:", error);
+        Toast.show({
+          placement: "top",
+          render: () => (
+            <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
+              Failed to load properties.
+            </Box>
+          ),
+        });
       } finally {
         setLoading(false);
         if (reset) setRefreshing(false);
@@ -138,13 +152,38 @@ export default function Shorts({ navigation }) {
   );
   useEffect(() => {
     const getData = async () => {
-      const data = await AsyncStorage.getItem("userdetails");
-      const parsedUserDetails = JSON.parse(data);
-      setUserInfo(parsedUserDetails);
+      try {
+        const data = await AsyncStorage.getItem("userdetails");
+        if (data) {
+          const parsedUserDetails = JSON.parse(data);
+          setUserInfo(parsedUserDetails);
+        }
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+      }
     };
     getData();
     fetchProperties(true);
   }, []);
+  useEffect(() => {
+    const backAction = () => {
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+        return true;
+      } else {
+        Alert.alert("Exit App", "Do you want to exit?", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Exit", onPress: () => BackHandler.exitApp() },
+        ]);
+        return true;
+      }
+    };
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+    return () => backHandler.remove();
+  }, [navigation]);
   const handleNavigate = useCallback(
     (item) => {
       dispatch(setPropertyDetails(item));
@@ -152,7 +191,7 @@ export default function Shorts({ navigation }) {
     },
     [dispatch, navigation]
   );
-  const getOwnerDetails = async (property) => {
+  const getOwnerDetails = useCallback(async (property) => {
     try {
       const response = await fetch(
         `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property?.unique_property_id}`
@@ -161,19 +200,20 @@ export default function Shorts({ navigation }) {
       const data = await response.json();
       return data.property_details?.seller_details || {};
     } catch (error) {
+      console.error("Error fetching owner details:", error);
       return {};
     }
-  };
+  }, []);
   const handleWhatsappChat = useCallback(
     async (property) => {
       try {
-        let ownerData = await getOwnerDetails(property);
+        const ownerData = await getOwnerDetails(property);
         const ownerPhone = ownerData?.mobile;
         if (!ownerPhone) {
           Toast.show({
             placement: "top-right",
             render: () => (
-              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              <Box bg="red.500" px="2" py="1" mr={5} rounded="sm" mb={5}>
                 Owner phone number not available.
               </Box>
             ),
@@ -186,7 +226,11 @@ export default function Shorts({ navigation }) {
             : "https://apps.apple.com/us/app/whatsapp-messenger/id310633997";
         const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
         const ownerName = ownerData?.name || "Owner";
-        const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
+        const message = `Hi ${ownerName},\nI'm interested in this property: ${
+          property.property_name
+        }.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${
+          userInfo?.mobile || "N/A"
+        } to initiate the process.`;
         const encodedMessage = encodeURIComponent(message);
         const normalizedPhone = ownerPhone.startsWith("+")
           ? ownerPhone.replace(/\D/g, "")
@@ -199,7 +243,7 @@ export default function Shorts({ navigation }) {
           Toast.show({
             placement: "top-right",
             render: () => (
-              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              <Box bg="red.500" px="2" py="1" mr={5} rounded="sm" mb={5}>
                 WhatsApp is not installed. Redirecting to app store...
               </Box>
             ),
@@ -211,7 +255,7 @@ export default function Shorts({ navigation }) {
         Toast.show({
           placement: "top-right",
           render: () => (
-            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            <Box bg="red.500" px="2" py="1" mr={5} rounded="sm" mb={5}>
               Failed to open WhatsApp chat.
             </Box>
           ),
@@ -228,47 +272,34 @@ export default function Shorts({ navigation }) {
       return (
         <PropertyCard
           item={item}
-          onPress={() => handleNavigate(item)}
+          onPress={handleNavigate}
           handleWhatsappChat={handleWhatsappChat}
         />
       );
     },
     [handleNavigate, handleWhatsappChat]
   );
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
     fetchProperties(true);
   }, [fetchProperties]);
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index);
+      setCurrentIndex(viewableItems[0].index || 0);
     }
   }).current;
   const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
+    itemVisiblePercentThreshold: 80,
+    minimumViewTime: 300,
   };
-  React.useEffect(() => {
-    const backAction = () => {
-      if (navigation.canGoBack()) {
-        navigation.goBack();
-      } else {
-        Alert.alert("Exit App", "Do you want to exit?", [
-          { text: "Cancel", style: "cancel" },
-          { text: "Exit", onPress: () => BackHandler.exitApp() },
-        ]);
-      }
-      return true;
-    };
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-    return () => backHandler.remove();
-  }, []);
+  const getItemLayout = useCallback(
+    (data, index) => ({
+      length: SCREEN_HEIGHT,
+      offset: SCREEN_HEIGHT * index,
+      index,
+    }),
+    []
+  );
   return (
     <SafeAreaProvider>
       {loading && properties.length === 0 ? (
@@ -281,20 +312,28 @@ export default function Shorts({ navigation }) {
           ref={flatListRef}
           data={properties}
           renderItem={renderPropertyCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) =>
+            item.unique_property_id?.toString() || `item-${Math.random()}`
+          }
           pagingEnabled
           showsVerticalScrollIndicator={false}
           snapToAlignment="start"
+          snapToInterval={SCREEN_HEIGHT}
           decelerationRate="fast"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
               colors={["#1D3A76"]}
+              progressViewOffset={50}
             />
           }
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
+          getItemLayout={getItemLayout}
+          initialNumToRender={3}
+          maxToRenderPerBatch={3}
+          windowSize={5}
         />
       )}
     </SafeAreaProvider>
@@ -303,16 +342,17 @@ export default function Shorts({ navigation }) {
 const styles = StyleSheet.create({
   videoContainer: {
     height: SCREEN_HEIGHT,
-    width: "100%",
+    width: SCREEN_WIDTH,
+    backgroundColor: "#000",
   },
   image: {
-    width: "100%",
-    height: Platform.OS === "ios" ? "100%" : "100%",
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
     borderRadius: 0,
   },
   bottomActions: {
     position: "absolute",
-    bottom: Platform.OS === "ios" ? SCREEN_HEIGHT * 0.03 : SCREEN_HEIGHT * 0.02,
+    bottom: Platform.OS === "ios" ? 20 : 10,
     left: 10,
     right: 10,
     flexDirection: "row",
@@ -353,7 +393,6 @@ const styles = StyleSheet.create({
   highlightedFeatureText: {
     fontSize: 12,
     color: "#fff",
-    marginLeft: 4,
     marginTop: 3,
     fontFamily: "PoppinsSemiBold",
   },

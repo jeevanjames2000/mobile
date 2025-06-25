@@ -39,6 +39,8 @@ import FilterBar from "./propertyDetailsComponents/FilterBar";
 import ShareDetailsModal from "./ShareDetailsModal";
 import { setLocation } from "../../../store/slices/searchSlice";
 import { debounce } from "lodash";
+import UserProfileModal from "../../../utils/UserProfileModal";
+import { useUserProfileCheck } from "../../../utils/UserProfileCheckWrapper";
 const userTypeMap = {
   3: "Builder",
   4: "Agent",
@@ -301,15 +303,7 @@ const PropertyCard = memo(
     );
   }
 );
-const mapTabToPropertyFor = (tab) => {
-  const mapping = {
-    Buy: "Sell",
-    Rent: "Rent",
-    Plot: "Sell",
-    Commercial: "Sell",
-  };
-  return mapping[tab] || "Sell";
-};
+
 const formatToIndianCurrency = (value) => {
   if (value >= 10000000) {
     const crores = value / 10000000;
@@ -333,6 +327,18 @@ export default function PropertyLists({ route }) {
   const intrestedProperties = useSelector(
     (state) => state.property.intrestedProperties
   );
+  const {
+    user,
+    showModal,
+    setShowModal,
+    loading,
+    checkUserProfile,
+    handleChange,
+    handleSubmit,
+  } = useUserProfileCheck();
+  useEffect(() => {
+    checkUserProfile();
+  }, []);
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const flatListRef = useRef(null);
@@ -953,6 +959,14 @@ export default function PropertyLists({ route }) {
             </Pressable>
           </Pressable>
         )}
+        <UserProfileModal
+          visible={showModal}
+          user={user}
+          loading={loading}
+          onCancel={() => setShowModal(false)}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+        />
         {showScrollToTop && (
           <IconButton
             position="absolute"

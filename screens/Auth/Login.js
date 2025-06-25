@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { Box, Image, Input, Toast } from "native-base";
+import { Box, Image, Toast } from "native-base";
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -192,13 +192,12 @@ export default function LoginScreen() {
       () => {
         setKeyboardVisible(true);
         Animated.timing(bottomSheetTranslate, {
-          toValue: 100, // Adjust as needed
+          toValue: 100,
           duration: 300,
           useNativeDriver: true,
         }).start();
       }
     );
-
     const keyboardDidHideListener = Keyboard.addListener(
       "keyboardDidHide",
       () => {
@@ -210,13 +209,11 @@ export default function LoginScreen() {
         }).start();
       }
     );
-
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
   }, []);
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -254,7 +251,6 @@ export default function LoginScreen() {
                 placeholderTextColor="#ccc"
               />
             </View>
-
             <TouchableOpacity
               style={styles.loginButton}
               onPress={() => handleLoginOrRegister(0)}
@@ -334,25 +330,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#25D366",
     alignItems: "center",
   },
-
   whatsappContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
-
   whatsappIcon: {
     width: 20,
     height: 20,
     marginRight: 10,
   },
-
   whatsappText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
-
   input: {
     width: "70%",
     marginTop: 20,
@@ -378,13 +370,11 @@ const styles = StyleSheet.create({
     color: "#000",
     marginRight: 8,
   },
-
   mobileInput: {
     flex: 1,
     fontSize: 16,
     color: "#000",
   },
-
   loginButton: {
     width: "100%",
     padding: 20,

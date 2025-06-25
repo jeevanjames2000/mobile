@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -30,10 +30,6 @@ export default function Profile() {
   const [phone, setPhone] = useState("");
   const [state, setState] = useState("N/A");
   const [city, setCity] = useState("N/A");
-  const [address, setAddress] = useState("N/A");
-  const [pincode, setPincode] = useState("N/A");
-  const [gstNumber, setGstNumber] = useState("N/A");
-  const [reraNumber, setReraNumber] = useState("N/A");
   const [photo, setPhoto] = useState(null);
   const [userFile, setUserFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -66,7 +62,6 @@ export default function Profile() {
     await AsyncStorage.removeItem("recentSuggestions");
     await AsyncStorage.removeItem("userdetails");
     await AsyncStorage.removeItem("city_id");
-    await AsyncStorage.removeItem("cached_properties");
     setTimeout(() => {
       navigation.navigate("Login");
       navigation.dispatch(
@@ -85,34 +80,20 @@ export default function Profile() {
       const storedDetails = await AsyncStorage.getItem("userdetails");
       if (!storedDetails) {
         Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "User details not found.",
-          position: "top",
+          duration: 1000,
+          placement: "top-right",
+          render: () => {
+            return (
+              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                User details not found.
+              </Box>
+            );
+          },
         });
         return;
       }
       const parsedUserDetails = JSON.parse(storedDetails);
       setUserDetails(parsedUserDetails);
-      const cachedData = await AsyncStorage.getItem("profileData");
-      if (cachedData) {
-        const { data, timestamp } = JSON.parse(cachedData);
-        const currentTime = new Date().getTime();
-        if (currentTime - timestamp < CACHE_DURATION) {
-          setData(data);
-          setName(data.name || "N/A");
-          setEmail(data.email || "N/A");
-          setPhone(data.mobile || "N/A");
-          setState(data.state || "N/A");
-          setCity(data.city || "N/A");
-          setAddress(data.address || "N/A");
-          setPincode(data.pincode || "N/A");
-          setGstNumber(data.gst_number || "N/A");
-          setReraNumber(data.rera_number || "N/A");
-          setPhoto(data.photo || null);
-          return;
-        }
-      }
       const response = await axios.get(
         `https://api.meetowner.in/user/v1/getProfile?user_id=${parsedUserDetails?.user_id}`
       );
@@ -124,10 +105,6 @@ export default function Profile() {
         setPhone(fetchedData.mobile || "N/A");
         setState(fetchedData.state || "N/A");
         setCity(fetchedData.city || "N/A");
-        setAddress(fetchedData.address || "N/A");
-        setPincode(fetchedData.pincode || "N/A");
-        setGstNumber(fetchedData.gst_number || "N/A");
-        setReraNumber(fetchedData.rera_number || "N/A");
         setPhoto(fetchedData.photo || null);
         await AsyncStorage.setItem(
           "profileData",
@@ -135,19 +112,29 @@ export default function Profile() {
         );
       } else {
         Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "Unable to load profile data.",
-          position: "top",
+          duration: 1000,
+          placement: "top-right",
+          render: () => {
+            return (
+              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                Unable to load profile data.
+              </Box>
+            );
+          },
         });
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
       Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Unable to load profile data.",
-        position: "top",
+        duration: 1000,
+        placement: "top-right",
+        render: () => {
+          return (
+            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              Unable to load profile data.
+            </Box>
+          );
+        },
       });
     }
   };
@@ -222,6 +209,7 @@ export default function Profile() {
         {
           name: name,
           email: email,
+          city: city,
           id: userDetails.user_id,
         }
       );
@@ -613,6 +601,12 @@ export default function Profile() {
               keyboardType="email-address"
               onChangeText={(text) => setEmail(text)}
             />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter City Name"
+              value={city}
+              onChangeText={(text) => setCity(text)}
+            />
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
@@ -804,6 +798,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginVertical: 10,
     backgroundColor: "#fff",
+    shadowColor: "#ddd",
     elevation: 3,
   },
   buttonContainer: {

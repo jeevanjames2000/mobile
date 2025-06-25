@@ -10,16 +10,18 @@ import {
   Share,
 } from "react-native";
 import {
-  useDisclose, StatusBar,
+  useDisclose,
+  StatusBar,
   View,
   Text,
   FlatList,
   HStack,
   Image,
   Pressable,
-  Spinner, VStack,
+  Spinner,
+  VStack,
   Box,
-  Toast
+  Toast,
 } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -36,7 +38,21 @@ import {
 import PropertyImage from "./components/propertyDetailsComponents/PropertyImage";
 import WhatsAppIcon from "../../assets/propertyicons/whatsapp.png";
 import ApprovedIcon from "../../assets/propertyicons/verified.png";
+import { useUserProfileCheck } from "../../utils/UserProfileCheckWrapper";
+import UserProfileModal from "../../utils/UserProfileModal";
 export default function Wishlist() {
+  const {
+    user,
+    showModal,
+    setShowModal,
+    loading,
+    checkUserProfile,
+    handleChange,
+    handleSubmit,
+  } = useUserProfileCheck();
+  useEffect(() => {
+    checkUserProfile(); // Call it when the screen loads
+  }, []);
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const [state, setState] = useState([]);
@@ -369,6 +385,14 @@ export default function Wishlist() {
               }}
             />
           )}
+          <UserProfileModal
+            visible={showModal}
+            user={user}
+            loading={loading}
+            onCancel={() => setShowModal(false)}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+          />
         </KeyboardAvoidingView>
       </SafeAreaView>
     </SafeAreaProvider>

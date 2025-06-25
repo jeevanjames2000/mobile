@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
-import { Box, Button, Toast } from "native-base";
+import { Button } from "native-base";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
 export default function OtpScreen() {
@@ -144,7 +144,6 @@ export default function OtpScreen() {
   const handleVerifyOtp = async () => {
     const userEnteredOtp = enteredOtp.join("").trim();
     const generatedOtp = String(otp).trim();
-
     if (
       BYPASS_NUMBERS.includes(mobile) &&
       userEnteredOtp === ADMIN_BYPASS_CODE
@@ -160,15 +159,12 @@ export default function OtpScreen() {
       navigation.replace("dashboard");
       return;
     }
-
-    // Normal OTP Verification for other numbers
     if (userEnteredOtp.length !== otpLength) {
       setError("Please enter a valid 6-digit OTP.");
       setMessage("");
       setLoading(false);
       return;
     }
-
     if (userEnteredOtp === generatedOtp) {
       await AsyncStorage.multiSet([
         ["token", token],
@@ -187,7 +183,6 @@ export default function OtpScreen() {
       setMessage("");
     }
   };
-
   const resendOtp = async () => {
     if (isWhatsApp) {
       await sendWhatsAppMessage(mobile);

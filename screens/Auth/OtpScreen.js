@@ -18,6 +18,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 export default function OtpScreen() {
   const route = useRoute();
   const { mobile, userDetails, token, isWhatsApp } = route.params || {};
+  console.log("userDetails: ", userDetails);
   const navigation = useNavigation();
   const BYPASS_NUMBERS = ["6302816551", "6305625580"];
   const ADMIN_BYPASS_CODE = "010203";

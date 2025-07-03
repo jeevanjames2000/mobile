@@ -66,9 +66,6 @@ const UserProfileModal = ({
                 />
               </View>
               <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
-                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.updateBtn,

@@ -81,7 +81,7 @@ export default function HomeScreen() {
         const userData = JSON.parse(userDataString);
         registerForPushNotificationsAsync().then((token) => {
           if (token) {
-            savePushTokenToBackend(userData?.user_id, userData?.mobile, token);
+            savePushTokenToBackend(userData?.id, userData?.mobile, token);
             AsyncStorage.setItem("pushToken", token);
           }
         });

@@ -239,12 +239,9 @@ export default function BestDealProperties({ activeTab }) {
       return;
     }
     const payload = {
-      User_user_id: userInfo.user_id,
-      userName: userInfo.name,
-      userEmail: userInfo?.email || "N/A",
-      userMobile: userInfo.mobile,
-      ...property,
-      status: isAlreadyLiked,
+      user_id: userInfo.id,
+      unique_property_id: property.unique_property_id,
+      property_name: property.property_name,
     };
     try {
       await axios.post(`${config.awsApiUrl}/fav/v1/postIntrest`, payload);
@@ -263,12 +260,12 @@ export default function BestDealProperties({ activeTab }) {
   };
   const fetchIntrestedProperties = async (userInfo) => {
     try {
-      if (!userInfo?.user_id) {
+      if (!userInfo?.id) {
         console.warn("User ID not found in userInfo:", userInfo);
         return;
       }
       const response = await axios.get(
-        `${config.awsApiUrl}/fav/v1/getAllFavourites?user_id=${userInfo.user_id}`
+        `${config.awsApiUrl}/fav/v1/getAllFavourites?user_id=${userInfo.id}`
       );
       const liked = response.data.favourites || [];
       const likedIds = liked.map((fav) => fav.unique_property_id);
@@ -495,7 +492,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 6,
     },
-     shadowOpacity: Platform.OS !== 'ios' ? 0.25 : 0.05,
+    shadowOpacity: Platform.OS !== "ios" ? 0.25 : 0.05,
     shadowRadius: 10,
     elevation: 1,
     flexDirection: "row",

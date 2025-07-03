@@ -140,7 +140,7 @@ export default function Support() {
         mobile: formData.mobile,
         email: formData.email,
         message: formData.message,
-        user_id: userInfo.user_id,
+        user_id: userInfo.id,
       })
       .then((response) => {
         setIsLoadingEffect(false);

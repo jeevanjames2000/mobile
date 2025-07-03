@@ -42,7 +42,7 @@ const HomeHeader = () => {
             ? JSON.parse(userDetailsData)
             : null;
 
-          if (!parsedUserDetails?.user_id) {
+          if (!parsedUserDetails?.id) {
             setPhotoError(true);
             Toast.show({
               type: "error",
@@ -53,7 +53,7 @@ const HomeHeader = () => {
           }
 
           const response = await axios.get(
-            `https://api.meetowner.in/user/v1/getProfile?user_id=${parsedUserDetails.user_id}`
+            `https://api.meetowner.in/user/v1/getProfile?user_id=${parsedUserDetails.id}`
           );
 
           const fetchedData = response.data;

@@ -95,7 +95,7 @@ export default function Profile() {
       const parsedUserDetails = JSON.parse(storedDetails);
       setUserDetails(parsedUserDetails);
       const response = await axios.get(
-        `https://api.meetowner.in/user/v1/getProfile?user_id=${parsedUserDetails?.user_id}`
+        `https://api.meetowner.in/user/v1/getProfile?user_id=${parsedUserDetails?.id}`
       );
       const fetchedData = response.data;
       if (fetchedData && typeof fetchedData === "object") {
@@ -188,7 +188,7 @@ export default function Profile() {
       });
       return;
     }
-    if (!userDetails.user_id) {
+    if (!userDetails.id) {
       Toast.show({
         duration: 1000,
         placement: "top-right",
@@ -210,7 +210,7 @@ export default function Profile() {
           name: name,
           email: email,
           city: city,
-          id: userDetails.user_id,
+          id: userDetails.id,
         }
       );
       if (response.data.message === "User updated successfully") {
@@ -274,7 +274,7 @@ export default function Profile() {
       type: userFile.type,
       name: userFile.name,
     });
-    formData.append("user_id", userDetails.user_id);
+    formData.append("user_id", userDetails.id);
     setLoading(true);
     try {
       const response = await axios.post(

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Toast, Box } from "native-base";
+import axios from "axios";
 import config from "../config";
+
 export const useUserProfileCheck = () => {
   const [user, setUser] = useState({
     user_id: "",
@@ -11,86 +13,89 @@ export const useUserProfileCheck = () => {
   });
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const showToast = (message, type = "error") => {
+    Toast.show({
+      duration: 1000,
+      placement: "top-right",
+      render: () => {
+        return (
+          <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            {message}
+          </Box>
+        );
+      },
+    });
+  };
+
   const checkUserProfile = async () => {
     try {
-      const data = await AsyncStorage.getItem("profileData");
-      if (!data) return setShowModal(false);
-      const data2 = JSON.parse(data);
-      const userDetails = data2.data;
-      const isLoggedIn = !!userDetails?.id;
-      const isIncomplete =
-        !userDetails?.name?.trim() ||
-        !userDetails?.email?.trim() ||
-        !userDetails?.city?.trim();
-      if (isLoggedIn && isIncomplete) {
-        setUser({
-          user_id: userDetails.id || "",
-          name: userDetails.name || "",
-          email: userDetails.email || "",
-          city: userDetails.city || "",
-        });
-        setShowModal(true);
-      } else {
-        setShowModal(false);
+      const storedDetails = await AsyncStorage.getItem("userdetails");
+      if (!storedDetails) {
+        return showToast("User not found in storage.");
       }
+
+      const { id } = JSON.parse(storedDetails);
+
+      if (!id) return;
+
+      const res = await axios.get(
+        `${config.awsApiUrl}/user/v1/getProfile?user_id=${id}`
+      );
+      const profile = res.data;
+
+      const isIncomplete =
+        !profile?.name?.trim() ||
+        !profile?.email?.trim() ||
+        !profile?.city?.trim();
+
+      setUser({
+        user_id: profile.id || "",
+        name: profile.name || "",
+        email: profile.email || "",
+        city: profile.city || "",
+      });
+
+      setShowModal(isIncomplete);
     } catch (err) {
-      console.error("Failed to read user profile:", err);
+      console.error("Profile fetch failed:", err);
+      showToast("Failed to load profile.");
       setShowModal(false);
     }
   };
+
   const handleChange = (name, value) => {
     setUser((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSubmit = async () => {
     setLoading(true);
-    const payload = {
-      id: user.user_id,
-      name: user.name,
-      email: user.email,
-      city: user.city,
-    };
     try {
-      const res = await fetch(`${config.awsApiUrl}/user/v1/updateUser`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Update failed");
-      const currentUser = JSON.parse(
-        (await AsyncStorage.getItem("profileData")) || "{}"
-      );
-      const updatedUser = {
-        ...currentUser.data,
+      const payload = {
+        id: user.user_id,
         name: user.name,
         email: user.email,
         city: user.city,
       };
-      await AsyncStorage.setItem("profileData", JSON.stringify(updatedUser));
-      Toast.show({
-        placement: "top",
-        render: () => (
-          <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
-            Profile updated successfully!
-          </Box>
-        ),
+
+      const res = await fetch(`${config.awsApiUrl}/user/v1/updateUser`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+
+      if (!res.ok) throw new Error("Update failed");
+
+      showToast("Profile updated successfully!", "success");
       setShowModal(false);
-    } catch (error) {
-      console.error("Profile update failed:", error);
-      Toast.show({
-        placement: "top",
-        render: () => (
-          <Box bg="red.500" px="2" py="1" rounded="sm" mb={5}>
-            Something went wrong while updating profile.
-          </Box>
-        ),
-      });
+    } catch (err) {
+      console.error("Update failed:", err);
+      showToast("Something went wrong while updating profile.");
     } finally {
       setLoading(false);
     }
   };
+
   return {
     user,
     showModal,

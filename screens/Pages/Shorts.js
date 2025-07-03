@@ -18,6 +18,9 @@ import { Box, HStack, Image, Text, Toast } from "native-base";
 import WhatsAppIcon from "../../assets/propertyicons/whatsapp.png";
 import { useDispatch } from "react-redux";
 import { setPropertyDetails } from "../../store/slices/propertyDetails";
+import { useUserProfileCheck } from "../../utils/UserProfileCheckWrapper";
+import { useFocusEffect } from "@react-navigation/native";
+import UserProfileModal from "../../utils/UserProfileModal";
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 const PropertyCard = memo(({ item, onPress, handleWhatsappChat }) => {
   const property = {
@@ -110,6 +113,19 @@ const formatToIndianCurrency = (value) => {
   return numValue.toString();
 };
 export default function Shorts({ navigation }) {
+  const {
+    user,
+    showModal,
+    setShowModal,
+    checkUserProfile,
+    handleChange,
+    handleSubmit,
+  } = useUserProfileCheck();
+  useFocusEffect(
+    useCallback(() => {
+      checkUserProfile();
+    }, [])
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
@@ -336,6 +352,14 @@ export default function Shorts({ navigation }) {
           windowSize={5}
         />
       )}
+      <UserProfileModal
+        visible={showModal}
+        user={user}
+        loading={loading}
+        onCancel={() => setShowModal(false)}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+      />
     </SafeAreaProvider>
   );
 }

@@ -56,6 +56,8 @@ const PropertyCard = memo(
     onShare,
     intrestedProperties,
     contactNow,
+    contacted,
+
     handleWhatsappChat,
   }) => {
     const formatValue = (value) => {
@@ -96,6 +98,7 @@ const PropertyCard = memo(
           return "#1e3a8a";
       }
     };
+
     return (
       <View style={styles.containerVstack}>
         <Pressable onPress={() => onNavigate(item)}>
@@ -188,34 +191,36 @@ const PropertyCard = memo(
               </>
             </HStack>
             <VStack style={styles.contentContainer}>
-              <HStack justifyContent="space-between" alignItems="center">
-                <Text style={styles.propertyText} numberOfLines={1}>
+              <HStack
+                justifyContent="space-between"
+                alignItems="center"
+                // px={2}
+                width="100%"
+              >
+                <Text
+                  numberOfLines={1}
+                  style={[styles.propertyText, { flex: 1 }]}
+                >
                   {item.property_name || "N/A"}
                 </Text>
-                <HStack
-                  space={1}
-                  alignItems="center"
-                  px={2}
-                  py={0.5}
-                  justifyContent="center"
-                >
+
+                <HStack space={1} alignItems="center">
                   <Image
                     alt="approve"
                     source={ApprovedIcon}
-                    size={22}
-                    color="green"
-                    resizeMethod="contain"
+                    style={{ width: 16, height: 16 }}
+                    resizeMode="contain"
                   />
                   <Text
                     fontSize="12"
                     style={{ fontFamily: "PoppinsSemiBold" }}
                     color="green.600"
-                    thin
                   >
-                    {"Verified"}
+                    Verified
                   </Text>
                 </HStack>
               </HStack>
+
               <HStack
                 justifyContent={"space-between"}
                 space={1}
@@ -296,14 +301,20 @@ const PropertyCard = memo(
               contactNow(item);
             }}
           >
-            <Text style={styles.buttonsText}>Contact</Text>
+            <Text
+              style={styles.buttonsText}
+              disabled={contacted.includes(item?.unique_property_id)}
+            >
+              {contacted.includes(item.unique_property_id)
+                ? "Submitted"
+                : "Contact"}
+            </Text>
           </TouchableOpacity>
         </HStack>
       </View>
     );
   }
 );
-
 const formatToIndianCurrency = (value) => {
   if (value >= 10000000) {
     const crores = value / 10000000;
@@ -343,6 +354,7 @@ export default function PropertyLists({ route }) {
   const navigation = useNavigation();
   const flatListRef = useRef(null);
   const [properties, setProperties] = useState([]);
+
   const [initialLoading, setInitialLoading] = useState(true);
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -370,6 +382,27 @@ export default function PropertyLists({ route }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const locationCacheRef = useRef({});
   const [userInfo, setUserInfo] = useState("");
+  const [contacted, setContacted] = useState([]);
+  const fetchContactedProperties = async () => {
+    const data = await AsyncStorage.getItem("userdetails");
+    if (!data) {
+      return;
+    }
+    const userDetails = await JSON.parse(data);
+
+    try {
+      const response = await axios.get(
+        `${config.awsApiUrl}/enquiry/v1/getUserContactSellers?user_id=${userDetails?.id}`
+      );
+      const contacts = response.data || [];
+      const contactIds = contacts.results.map(
+        (contact) => contact.unique_property_id
+      );
+      setContacted(contactIds);
+    } catch (error) {
+      console.error("Failed to fetch liked properties:", error);
+    }
+  };
   const [filters, setFilters] = useState({
     property_for: property_for || "Sell",
     property_in: property_in || "Residential",
@@ -407,9 +440,9 @@ export default function PropertyLists({ route }) {
           userDetailsLocal = null;
         }
       }
-      if (userDetailsLocal?.user_id && city) {
+      if (userDetailsLocal?.id && city) {
         const viewData = {
-          user_id: userDetailsLocal.user_id,
+          user_id: userDetailsLocal.id,
           searched_location: searchValue || "N/A",
           searched_for: tab || "N/A",
           name: userDetailsLocal?.name || "N/A",
@@ -436,13 +469,7 @@ export default function PropertyLists({ route }) {
     },
     [tab, city, property_in, sub_type, occupancy, userDetails]
   );
-  const debouncedFetchProperties = useCallback(
-    debounce((reset, appliedFilters, searchValue) => {
-      fetchProperties(reset, appliedFilters);
-      handleUserSearched(searchValue);
-    }, 3000),
-    []
-  );
+
   useEffect(() => {
     const updatedFilters = {
       property_for: property_for || "Sell",
@@ -474,6 +501,7 @@ export default function PropertyLists({ route }) {
     setPage(1);
     setProperties([]);
     fetchProperties(true, updatedFilters);
+
     if (location) {
       handleUserSearched(location);
     }
@@ -487,9 +515,60 @@ export default function PropertyLists({ route }) {
     price,
     property_cost,
     city,
-    fetchProperties,
-    handleUserSearched,
   ]);
+  const reloadApis = useCallback(
+    (newContactId = null) => {
+      if (newContactId) {
+        setContacted((prev) =>
+          prev.includes(newContactId) ? prev : [...prev, newContactId]
+        );
+      }
+      fetchContactedProperties();
+      const updatedFilters = {
+        property_for: property_for || "Sell",
+        property_in:
+          property_in ||
+          (tab === "Commercial"
+            ? "Commercial"
+            : tab === "Plot"
+            ? ""
+            : "Residential"),
+        sub_type:
+          sub_type ||
+          (tab === "Plot"
+            ? "Plot"
+            : tab === "Commercial"
+            ? "Retail Shop"
+            : "Apartment"),
+        bedrooms: bhk || "",
+        occupancy: occupancy || "",
+        possession_status: possession_status || "",
+        search: location || "",
+        priceFilter: price || "Relevance",
+        property_cost: property_cost || "",
+        property_status: 1,
+        city_id: city,
+      };
+      setFilters(updatedFilters);
+      setSearchQuery(location || "");
+      setPage(1);
+      setProperties([]);
+      fetchProperties(true, updatedFilters);
+    },
+    [
+      property_for,
+      property_in,
+      sub_type,
+      bhk,
+      occupancy,
+      possession_status,
+      location,
+      price,
+      property_cost,
+      city,
+      fetchContactedProperties,
+    ]
+  );
   const fetchProperties = useCallback(
     async (reset = false, appliedFilters = filters) => {
       if (!hasMore && !reset) return;
@@ -530,6 +609,7 @@ export default function PropertyLists({ route }) {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`API error: ${response.status}`);
         const data = await response.json();
+
         if (data?.properties?.length > 0) {
           setProperties((prev) => {
             const newProperties = reset
@@ -575,9 +655,12 @@ export default function PropertyLists({ route }) {
       }
     };
     getData();
+    fetchContactedProperties();
   }, []);
   const handleAPI = async (item) => {
+    console.log("item: ", item.unique_property_id);
     const owner = await getOwnerDetails(item.unique_property_id);
+    console.log("owner: ", owner);
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
@@ -643,81 +726,70 @@ export default function PropertyLists({ route }) {
       return;
     }
     const payload = {
-      User_user_id: userInfo.user_id,
-      userName: userInfo.name,
-      userEmail: userInfo?.email || "N/A",
-      userMobile: userInfo.mobile,
-      ...property,
-      status: isAlreadyLiked ? 1 : 0,
+      user_id: userInfo.id,
+      unique_property_id: property.unique_property_id,
+      property_name: property.property_name,
     };
     try {
-      await fetch(`${config.awsApiUrl}/fav/v1/postIntrest`, {
-        method: "POST",
-        body: payload,
-      });
-      await handleAPI(property);
+      const res = await axios.post(
+        `${config.awsApiUrl}/fav/v1/postIntrest`,
+        payload
+      );
       await fetchIntrestedProperties(userInfo);
       Toast.show({
         placement: "top-right",
         render: () => (
-          <Box bg="green.300" px="2" py="1" rounded="sm" mb={5}>
-            {isAlreadyLiked ? "Added to favorites" : "Removed from favorites"}
+          <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            {isAlreadyLiked ? "Removed from favorites" : "Added to favorites"}
           </Box>
         ),
       });
     } catch (error) {
-      Toast.show({
-        placement: "top-right",
-        render: () => (
-          <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-            Failed to update favorite. Please try again.
-          </Box>
-        ),
-      });
+      console.error("Error posting interest:", error);
     }
   };
+
   const fetchIntrestedProperties = async (userInfo) => {
     try {
-      if (!userInfo?.user_id) {
+      if (!userInfo?.id) {
         return;
       }
       const response = await axios.get(
-        `${config.awsApiUrl}/fav/v1/getAllFavourites?user_id=${userInfo.user_id}`
+        `${config.awsApiUrl}/fav/v1/getAllFavourites?user_id=${userInfo.id}`
       );
       const liked = response.data.favourites || [];
       const likedIds = liked.map((fav) => fav.unique_property_id);
       dispatch(setIntrestedProperties(likedIds));
     } catch (error) {}
   };
-  const getOwnerDetails = async (property) => {
+  const getOwnerDetails = async (id) => {
+    console.log("property: ", id);
     try {
       const response = await fetch(
-        `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property?.unique_property_id}`
+        `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${id}`
       );
+      console.log("response: ", response);
       if (!response.ok) throw new Error(`API error: ${response.status}`);
       const data = await response.json();
-      return data.property_details?.seller_details || {};
+      console.log("data: ", data);
+      const propertydata = data.property;
+      const sellerdata = propertydata.user;
+      console.log("sellerdata: ", sellerdata);
+      return sellerdata || {};
     } catch (error) {
       return {};
     }
   };
   const handleFavourites = useCallback(
-    async (item, action) => {
+    async (item, isLiked) => {
       try {
+        const action = isLiked ? 0 : 1;
         await handleInterestAPI(item, action);
       } catch (error) {
-        console.error("Error in handleFavourites:", error);
-        Toast.show({
-          placement: "top-right",
-          render: () => (
-            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-              Failed to add favourite.
-            </Box>
-          ),
-        });
+        console.error("Error handling favourites:", error);
       }
     },
-    [userDetails]
+    [userInfo]
   );
   const shareProperty = async (property) => {
     try {
@@ -814,12 +886,13 @@ export default function PropertyLists({ route }) {
     ({ item }) => (
       <PropertyCard
         item={item}
-        onFav={handleFavourites}
+        onFav={(item, isLiked) => handleFavourites(item, isLiked)}
         onNavigate={handleNavigate}
         userDetails={userDetails}
         onShare={() => handleShare(item)}
         intrestedProperties={intrestedProperties}
         contactNow={contactNow}
+        contacted={contacted}
         handleWhatsappChat={handleWhatsappChat}
       />
     ),
@@ -857,7 +930,7 @@ export default function PropertyLists({ route }) {
       fetchProperties(true, updatedFilters);
       handleUserSearched(query);
     }, 1000),
-    [filters, dispatch, fetchProperties, handleUserSearched]
+    [dispatch, filters, fetchProperties, handleUserSearched]
   );
   const handleLocationSearch = useCallback(
     (query) => {
@@ -954,6 +1027,9 @@ export default function PropertyLists({ route }) {
               <ShareDetailsModal
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
+                contacted={contacted}
+                onContactedUpdate={(newContactId) => reloadApis(newContactId)}
+                reloadApis={reloadApis}
                 selectedPropertyId={selectedPropertyId}
               />
             </Pressable>

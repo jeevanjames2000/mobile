@@ -108,8 +108,8 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
       setIsLoading(true);
       await axios.post(`${config.awsApiUrl}/enquiry/v1/contactSeller`, {
         unique_property_id: selectedPropertyId.unique_property_id,
-        user_id: userInfo.user_id,
-        name: formData.name,
+        user_id: userInfo.id,
+        fullname: formData.name,
         mobile: formData.mobile,
       });
       await handleAPI();

@@ -82,14 +82,14 @@ function AppContent({ expoPushToken, setNotification }) {
     getData();
   }, [dispatch]);
   useEffect(() => {
-    if (expoPushToken && userData?.user_id && userData?.mobile) {
+    if (expoPushToken && userData?.id && userData?.mobile) {
       fetch("https://api.meetowner.in/user/v1/insertToken", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: userData.user_id,
+          user_id: userData.id,
           mobile: userData.mobile,
           push_token: expoPushToken,
         }),

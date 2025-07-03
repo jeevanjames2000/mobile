@@ -242,12 +242,9 @@ export default function LatestProperties({ activeTab }) {
       return;
     }
     const payload = {
-      User_user_id: userInfo.user_id,
-      userName: userInfo.name,
-      userEmail: userInfo?.email || "N/A",
-      userMobile: userInfo.mobile,
-      ...property,
-      status: isAlreadyLiked ? 1 : 0,
+      user_id: userInfo.id,
+      unique_property_id: property.unique_property_id,
+      property_name: property.property_name,
     };
     try {
       const res = await axios.post(
@@ -269,12 +266,12 @@ export default function LatestProperties({ activeTab }) {
   };
   const fetchIntrestedProperties = async (userInfo) => {
     try {
-      if (!userInfo?.user_id) {
+      if (!userInfo?.id) {
         console.warn("User ID not found in userInfo:", userInfo);
         return;
       }
       const response = await axios.get(
-        `${config.awsApiUrl}/fav/v1/getAllFavourites?user_id=${userInfo.user_id}`
+        `${config.awsApiUrl}/fav/v1/getAllFavourites?user_id=${userInfo.id}`
       );
       const liked = response.data.favourites || [];
       const likedIds = liked.map((fav) => fav.unique_property_id);

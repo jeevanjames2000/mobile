@@ -194,7 +194,9 @@ const SearchBarProperty = ({
   useEffect(() => {
     const loadRecentSuggestions = async () => {
       try {
-        const cachedSuggestions = await AsyncStorage.getItem("recentSuggestions");
+        const cachedSuggestions = await AsyncStorage.getItem(
+          "recentSuggestions"
+        );
         if (cachedSuggestions) {
           setRecentSuggestions(JSON.parse(cachedSuggestions));
         }
@@ -243,7 +245,9 @@ const SearchBarProperty = ({
         ...recentSuggestions,
         ...formattedSuggestions.filter(
           (suggestion) =>
-            !recentSuggestions.some((recent) => recent.value === suggestion.value)
+            !recentSuggestions.some(
+              (recent) => recent.value === suggestion.value
+            )
         ),
       ].slice(0, 10);
       setSuggestions(uniqueSuggestions);
@@ -259,7 +263,10 @@ const SearchBarProperty = ({
   };
 
   const debouncedFetchSuggestions = useCallback(
-    debounce((city, query) => fetchSuggestions(city, query), 300),
+    debounce((city, query) => fetchSuggestions(city, query), 300, {
+      leading: false,
+      trailing: true,
+    }),
     [recentSuggestions]
   );
 
@@ -278,11 +285,9 @@ const SearchBarProperty = ({
     },
     [
       selectedCity,
-      setSearchQuery,
       handleLocationSearch,
       recentSuggestions,
       debouncedFetchSuggestions,
-      dispatch,
     ]
   );
 
@@ -301,7 +306,7 @@ const SearchBarProperty = ({
     dispatch(setLocation(item.label));
     handleLocationSearch(item.label);
     setSuggestions([]);
-    fetchProperties(true, filters, item.label);
+    fetchProperties(true, { ...filters, search: item.label });
   };
 
   const renderSuggestionItem = ({ item }) => (
@@ -433,7 +438,8 @@ const SearchBarProperty = ({
         property_in: selectedBuildingType,
         sub_type: selectedSubPropertyType,
         bhk: type,
-        possession_status: selectedPropertyType === "Rent" ? "" : selectedPossession,
+        possession_status:
+          selectedPropertyType === "Rent" ? "" : selectedPossession,
         location: localSearchQuery,
         price: selectedSort,
         property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
@@ -500,7 +506,8 @@ const SearchBarProperty = ({
       property_in: selectedBuildingType,
       sub_type: selectedSubPropertyType,
       bedrooms: selectedBedrooms,
-      possession_status: selectedPropertyType === "Rent" ? "" : selectedPossession,
+      possession_status:
+        selectedPropertyType === "Rent" ? "" : selectedPossession,
       priceFilter: selectedSort,
       search: localSearchQuery.trim() || "",
       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
@@ -513,7 +520,8 @@ const SearchBarProperty = ({
       property_in: selectedBuildingType,
       sub_type: selectedSubPropertyType,
       bhk: selectedBedrooms,
-      possession_status: selectedPropertyType === "Rent" ? "" : selectedPossession,
+      possession_status:
+        selectedPropertyType === "Rent" ? "" : selectedPossession,
       location: localSearchQuery.trim() || "",
       price: selectedSort,
       property_cost: selectedPropertyType === "Rent" ? "" : selectedBudget,
@@ -812,7 +820,6 @@ const SearchBarProperty = ({
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {

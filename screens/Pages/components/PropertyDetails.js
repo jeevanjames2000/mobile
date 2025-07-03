@@ -5,10 +5,11 @@ import {
   Image,
   TouchableOpacity,
   Linking,
-  Modal, Share,
+  Modal,
+  Share,
   View,
   Text,
-  Platform
+  Platform,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,8 +21,10 @@ import ShareDetailsModal from "./ShareDetailsModal";
 import PropertyHeader from "./propertyHeader";
 import * as Location from "expo-location";
 import { Pressable } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
 import WhatsAppIcon from "../../../assets/propertyicons/whatsapp.png";
+import UserProfileModal from "../../../utils/UserProfileModal";
+import { useUserProfileCheck } from "../../../utils/UserProfileCheckWrapper";
 const facilityIconMap = {
   Lift: "caret-back-circle-outline",
   CCTV: "videocam-outline",
@@ -54,25 +57,45 @@ const facilityIconMap = {
   None: "close-outline",
 };
 export default function PropertyDetails({ navigation }) {
+  const {
+    user,
+    showModal,
+    loading,
+    setShowModal,
+    checkUserProfile,
+    handleChange,
+    handleSubmit,
+  } = useUserProfileCheck();
+  useFocusEffect(
+    useCallback(() => {
+      checkUserProfile();
+    }, [])
+  );
   const route = useRoute();
   const dispatch = useDispatch();
   const property = useSelector((state) => state.property.propertyDetails);
 
-const formatToIndianCurrency = (value) => {
-  if (value >= 10000000) {
-    const crores = value / 10000000;
-    return Math.floor(crores) === crores ? crores + " Cr" : crores.toFixed(2) + " Cr";
-  }
-  if (value >= 100000) {
-    const lakhs = value / 100000;
-    return Math.floor(lakhs) === lakhs ? lakhs + " L" : lakhs.toFixed(2) + " L";
-  }
-  if (value >= 1000) {
-    const thousands = value / 1000;
-    return Math.floor(thousands) === thousands ? thousands + " K" : thousands.toFixed(2) + " K";
-  }
-  return value.toString();
-};
+  const formatToIndianCurrency = (value) => {
+    if (value >= 10000000) {
+      const crores = value / 10000000;
+      return Math.floor(crores) === crores
+        ? crores + " Cr"
+        : crores.toFixed(2) + " Cr";
+    }
+    if (value >= 100000) {
+      const lakhs = value / 100000;
+      return Math.floor(lakhs) === lakhs
+        ? lakhs + " L"
+        : lakhs.toFixed(2) + " L";
+    }
+    if (value >= 1000) {
+      const thousands = value / 1000;
+      return Math.floor(thousands) === thousands
+        ? thousands + " K"
+        : thousands.toFixed(2) + " K";
+    }
+    return value.toString();
+  };
   const [userInfo, setUserInfo] = useState("");
   const [location, setLocation] = useState(null);
   const [region, setRegion] = useState(null);
@@ -328,61 +351,61 @@ const formatToIndianCurrency = (value) => {
     shareProperty();
   }, []);
   const handleWhatsappChat = useCallback(
-     async (property) => {
-       try {
-         let ownerData = await getOwnerDetails(property);
-         const ownerPhone = ownerData?.mobile;
-         if (!ownerPhone) {
-           Toast.show({
-             placement: "top-right",
-             render: () => (
-               <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-                 Owner phone number not available.
-               </Box>
-             ),
-           });
-           return;
-         }
-         const whatsappStoreLink =
-           Platform.OS === "android"
-             ? "https://play.google.com/store/apps/details?id=com.whatsapp"
-             : "https://apps.apple.com/us/app/whatsapp-messenger/id310633997";
-         const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
-         const ownerName = ownerData?.name || "Owner";
-         const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
-         const encodedMessage = encodeURIComponent(message);
-         const normalizedPhone = ownerPhone.startsWith("+")
-           ? ownerPhone.replace(/\D/g, "")
-           : `91${ownerPhone.replace(/\D/g, "")}`;
-         const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
-         const supported = await Linking.canOpenURL(whatsappUrl);
-         if (supported) {
-           await Linking.openURL(whatsappUrl);
-         } else {
-           Toast.show({
-             placement: "top-right",
-             render: () => (
-               <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-                 WhatsApp is not installed. Redirecting to app store...
-               </Box>
-             ),
-           });
-           await Linking.openURL(whatsappStoreLink);
-         }
-       } catch (error) {
-         console.error("Error opening WhatsApp:", error);
-         Toast.show({
-           placement: "top-right",
-           render: () => (
-             <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-               Failed to open WhatsApp chat.
-             </Box>
-           ),
-         });
-       }
-     },
-     [owner, userInfo, getOwnerDetails]
-   );
+    async (property) => {
+      try {
+        let ownerData = await getOwnerDetails(property);
+        const ownerPhone = ownerData?.mobile;
+        if (!ownerPhone) {
+          Toast.show({
+            placement: "top-right",
+            render: () => (
+              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                Owner phone number not available.
+              </Box>
+            ),
+          });
+          return;
+        }
+        const whatsappStoreLink =
+          Platform.OS === "android"
+            ? "https://play.google.com/store/apps/details?id=com.whatsapp"
+            : "https://apps.apple.com/us/app/whatsapp-messenger/id310633997";
+        const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
+        const ownerName = ownerData?.name || "Owner";
+        const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
+        const encodedMessage = encodeURIComponent(message);
+        const normalizedPhone = ownerPhone.startsWith("+")
+          ? ownerPhone.replace(/\D/g, "")
+          : `91${ownerPhone.replace(/\D/g, "")}`;
+        const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
+        const supported = await Linking.canOpenURL(whatsappUrl);
+        if (supported) {
+          await Linking.openURL(whatsappUrl);
+        } else {
+          Toast.show({
+            placement: "top-right",
+            render: () => (
+              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                WhatsApp is not installed. Redirecting to app store...
+              </Box>
+            ),
+          });
+          await Linking.openURL(whatsappStoreLink);
+        }
+      } catch (error) {
+        console.error("Error opening WhatsApp:", error);
+        Toast.show({
+          placement: "top-right",
+          render: () => (
+            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              Failed to open WhatsApp chat.
+            </Box>
+          ),
+        });
+      }
+    },
+    [owner, userInfo, getOwnerDetails]
+  );
   const memoizedPhotos = useMemo(() => photos, [photos]);
   const SkeletonLoader = () => (
     <FlatList
@@ -461,23 +484,23 @@ const formatToIndianCurrency = (value) => {
                       </Text>
                     </>
                   )}
-                  
               </View>
             )}
-             {(property.property_for === "Rent" ) && (
+            {property.property_for === "Rent" && (
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <>
-                      <View style={styles.verticalDivider} />
-                      <Text style={styles.possessionText}>
-                        Available From - {" "}
-                        {new Date(
-                          property.available_from
-                        ).toLocaleDateString("en-GB", {
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </Text>
-                    </>  
+                <>
+                  <View style={styles.verticalDivider} />
+                  <Text style={styles.possessionText}>
+                    Available From -{" "}
+                    {new Date(property.available_from).toLocaleDateString(
+                      "en-GB",
+                      {
+                        month: "short",
+                        year: "numeric",
+                      }
+                    )}
+                  </Text>
+                </>
               </View>
             )}
 
@@ -501,7 +524,10 @@ const formatToIndianCurrency = (value) => {
             style={styles.containerPosession}
           >
             <Text style={styles.propertyPrice}>
-              ₹ {property.property_for === 'Rent' ? formatToIndianCurrency(property.monthly_rent || 0) : formatToIndianCurrency(property.property_cost || 0)}
+              ₹{" "}
+              {property.property_for === "Rent"
+                ? formatToIndianCurrency(property.monthly_rent || 0)
+                : formatToIndianCurrency(property.property_cost || 0)}
             </Text>
             <Text style={styles.propertyPrice} marginLeft="1">
               {["Apartment", "Independent House", "Independent Villa"].includes(
@@ -519,11 +545,13 @@ const formatToIndianCurrency = (value) => {
               <View style={styles.overviewItem}>
                 <Text style={styles.overviewLabel}>Project Area</Text>
                 <Text style={styles.overviewValue}>
-                  {formatValue(property.total_project_area)} {property.total_project_area_type ||"Acres"}
+                  {formatValue(property.total_project_area)}{" "}
+                  {property.total_project_area_type || "Acres"}
                 </Text>
               </View>
 
-            {property.builtup_area !== null &&   (property?.sub_type !== "Plot" &&
+              {property.builtup_area !== null &&
+                property?.sub_type !== "Plot" &&
                 property?.sub_type !== "Land" && (
                   <View style={styles.overviewItem}>
                     <Text style={styles.overviewLabel}>Built-up Area</Text>
@@ -531,8 +559,7 @@ const formatToIndianCurrency = (value) => {
                       {formatValue(property.builtup_area)} {property.area_units}
                     </Text>
                   </View>
-                ))
-              }
+                )}
 
               {(property?.sub_type === "Plot" ||
                 property?.sub_type === "Land") && (
@@ -544,12 +571,15 @@ const formatToIndianCurrency = (value) => {
                 </View>
               )}
 
-              {(property.possession_status !== null || property.occupancy !== null) && ( <View style={styles.overviewItem}>
-                <Text style={styles.overviewLabel}>Occupancy Status</Text>
-                <Text style={styles.overviewValue}>
-                  {property.possession_status || property.occupancy}
-                </Text>
-              </View>)}
+              {(property.possession_status !== null ||
+                property.occupancy !== null) && (
+                <View style={styles.overviewItem}>
+                  <Text style={styles.overviewLabel}>Occupancy Status</Text>
+                  <Text style={styles.overviewValue}>
+                    {property.possession_status || property.occupancy}
+                  </Text>
+                </View>
+              )}
               <View style={styles.overviewItem}>
                 <Text style={styles.overviewLabel}>Property Type</Text>
                 <Text style={styles.overviewValue}>{property.property_in}</Text>
@@ -578,7 +608,7 @@ const formatToIndianCurrency = (value) => {
                   </Text>
                 </View>
               )}
-               {property.bike_parking > 0 && (
+              {property.bike_parking > 0 && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>bike Parking</Text>
                   <Text style={styles.overviewValue}>
@@ -594,19 +624,17 @@ const formatToIndianCurrency = (value) => {
                   </Text>
                 </View>
               )}
-               {property.rera_approved == 1 && (
+              {property.rera_approved == 1 && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>RERA Approved</Text>
-                  <Text style={styles.overviewValue}>
-                    Yes
-                  </Text>
+                  <Text style={styles.overviewValue}>Yes</Text>
                 </View>
               )}
               {property.passenger_lifts > 0 && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Passenger Lifts</Text>
                   <Text style={styles.overviewValue}>
-                   {property.passenger_lifts || 0}
+                    {property.passenger_lifts || 0}
                   </Text>
                 </View>
               )}
@@ -614,23 +642,23 @@ const formatToIndianCurrency = (value) => {
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Service Lifts</Text>
                   <Text style={styles.overviewValue}>
-                   {property.service_lifts || 0}
+                    {property.service_lifts || 0}
                   </Text>
                 </View>
               )}
-               {property.private_parking > 0 && (
+              {property.private_parking > 0 && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Private Parking</Text>
                   <Text style={styles.overviewValue}>
-                   {property.private_parking || 0}
+                    {property.private_parking || 0}
                   </Text>
                 </View>
               )}
-               {property.public_parking > 0 && (
+              {property.public_parking > 0 && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Public Parking</Text>
                   <Text style={styles.overviewValue}>
-                   {property.public_parking || 0}
+                    {property.public_parking || 0}
                   </Text>
                 </View>
               )}
@@ -638,16 +666,14 @@ const formatToIndianCurrency = (value) => {
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Stair Cases</Text>
                   <Text style={styles.overviewValue}>
-                   {property.stair_cases || 0}
+                    {property.stair_cases || 0}
                   </Text>
                 </View>
               )}
               {property.pantry_room === "Yes" && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Pantry Room</Text>
-                  <Text style={styles.overviewValue}>
-                   Yes
-                  </Text>
+                  <Text style={styles.overviewValue}>Yes</Text>
                 </View>
               )}
               <View style={styles.overviewItem}>
@@ -660,15 +686,16 @@ const formatToIndianCurrency = (value) => {
                   {property.furnished_status || "No"}
                 </Text>
               </View>
-               {property.security_deposit !== null && (
+              {property.security_deposit !== null && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Security Deposit</Text>
                   <Text style={styles.overviewValue}>
-                    {Number.parseFloat(property.security_deposit).toFixed(0)} Months
+                    {Number.parseFloat(property.security_deposit).toFixed(0)}{" "}
+                    Months
                   </Text>
                 </View>
               )}
-               {property.maintenance !== null && (
+              {property.maintenance !== null && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Maintenance </Text>
                   <Text style={styles.overviewValue}>
@@ -676,7 +703,7 @@ const formatToIndianCurrency = (value) => {
                   </Text>
                 </View>
               )}
-               {property.lock_in !== null && (
+              {property.lock_in !== null && (
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Lock in period </Text>
                   <Text style={styles.overviewValue}>
@@ -688,7 +715,7 @@ const formatToIndianCurrency = (value) => {
                 <View style={styles.overviewItem}>
                   <Text style={styles.overviewLabel}>Brokerage Charge </Text>
                   <Text style={styles.overviewValue}>
-                      {formatToIndianCurrency(property.brokerage_charge || 0)}
+                    {formatToIndianCurrency(property.brokerage_charge || 0)}
                   </Text>
                 </View>
               )}
@@ -843,6 +870,14 @@ const formatToIndianCurrency = (value) => {
           </Pressable>
         </Pressable>
       )}
+      <UserProfileModal
+        visible={showModal}
+        user={user}
+        loading={loading}
+        onCancel={() => setShowModal(false)}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+      />
       <Modal
         visible={isFloorPlanModalVisible}
         transparent={true}

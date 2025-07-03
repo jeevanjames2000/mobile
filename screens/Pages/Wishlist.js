@@ -51,7 +51,7 @@ export default function Wishlist() {
     handleSubmit,
   } = useUserProfileCheck();
   useEffect(() => {
-    checkUserProfile(); // Call it when the screen loads
+    checkUserProfile();
   }, []);
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -142,30 +142,32 @@ export default function Wishlist() {
               <Text style={styles.possesionText}>{area}</Text>
             </HStack>
             <VStack style={styles.contentContainer}>
-              <HStack justifyContent="space-between" alignItems="center">
-                <Text style={styles.propertyText}>
+              <HStack
+                justifyContent="space-between"
+                alignItems="center"
+                // px={2}
+                width="100%"
+              >
+                <Text
+                  numberOfLines={1}
+                  style={[styles.propertyText, { flex: 1 }]}
+                >
                   {item.property_name || "N/A"}
                 </Text>
-                <HStack
-                  space={1}
-                  alignItems="center"
-                  px={2}
-                  py={0.5}
-                  justifyContent="center"
-                >
+
+                <HStack space={1} alignItems="center">
                   <Image
                     alt="approve"
                     source={ApprovedIcon}
-                    size={18}
-                    color="green"
+                    style={{ width: 16, height: 16 }}
+                    resizeMode="contain"
                   />
                   <Text
                     fontSize="12"
                     style={{ fontFamily: "PoppinsSemiBold" }}
                     color="green.600"
-                    thin
                   >
-                    {"Verified"}
+                    Verified
                   </Text>
                 </HStack>
               </HStack>
@@ -219,14 +221,15 @@ export default function Wishlist() {
   const fetchIntrestedProperties = async (userInfo) => {
     setIsLoading(true);
     try {
-      if (!userInfo?.user_id) {
+      if (!userInfo?.id) {
         console.warn("User ID not found in userInfo:", userInfo);
         return;
       }
       const response = await axios.get(
-        `${config.awsApiUrl}/fav/v1/getAllFavourites?user_id=${userInfo.user_id}`
+        `${config.awsApiUrl}/fav/v1/getAllFavourites?user_id=${userInfo.id}`
       );
       const liked = response.data.favourites || [];
+
       setProperties(liked);
       const likedIds = liked
         .map((fav) => fav.unique_property_id)
@@ -259,12 +262,9 @@ export default function Wishlist() {
       return;
     }
     const payload = {
-      User_user_id: userInfo.user_id,
-      userName: userInfo.name,
-      userEmail: userInfo?.email || "N/A",
-      userMobile: userInfo.mobile,
-      ...property,
-      status: 1,
+      user_id: userInfo.id,
+      unique_property_id: property.unique_property_id,
+      property_name: property.property_name,
     };
     try {
       await axios.post(`${config.awsApiUrl}/fav/v1/postIntrest`, payload);

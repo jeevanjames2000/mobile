@@ -14,8 +14,11 @@ import axios from "axios";
 const ShareDetailsModal = ({
   modalVisible,
   setModalVisible,
+  reloadApis,
+  onContactedUpdate,
   selectedPropertyId,
 }) => {
+  console.log("selectedPropertyId: ", selectedPropertyId);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -25,11 +28,11 @@ const ShareDetailsModal = ({
   const getOwnerDetails = useCallback(async (property) => {
     try {
       const response = await fetch(
-        `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property.unique_property_id}`
+        `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${property.unique_property_id}`
       );
       const data = await response.json();
-      const propertydata = data.property_details;
-      const sellerdata = propertydata.seller_details;
+      const propertydata = data.property;
+      const sellerdata = propertydata.user;
       setOwner(sellerdata);
       if (response.ok) {
         return sellerdata;
@@ -44,9 +47,10 @@ const ShareDetailsModal = ({
   useEffect(() => {
     const getData = async () => {
       try {
-        const data = await AsyncStorage.getItem("userdetails");
+        const data = await AsyncStorage.getItem("profileData");
         if (data) {
-          const parsedUserDetails = JSON.parse(data);
+          const profileData = JSON.parse(data);
+          const parsedUserDetails = profileData.data;
           setUserInfo(parsedUserDetails);
           setName(parsedUserDetails.name);
           setEmail(parsedUserDetails.email || "");
@@ -97,7 +101,8 @@ const ShareDetailsModal = ({
     };
     try {
       const url = "https://server.gallabox.com/devapi/messages/whatsapp";
-      const response = await axios.post(url, payload, { headers });
+      const res = await axios.post(url, payload, { headers });
+
       Toast.show({
         duration: 1000,
         placement: "top-right",
@@ -113,6 +118,7 @@ const ShareDetailsModal = ({
     } catch (error) {
       setModalVisible(false);
     } finally {
+      reloadApis();
       setModalVisible(false);
       setIsLoading(false);
     }
@@ -126,10 +132,11 @@ const ShareDetailsModal = ({
     }
     const payload = {
       unique_property_id: selectedPropertyId.unique_property_id,
-      user_id: userInfo.user_id,
-      name: userInfo.name,
-      mobile: userInfo.phone,
+      user_id: userInfo.id,
+      fullname: userInfo.name,
+      mobile: userInfo.mobile,
     };
+    onContactedUpdate(selectedPropertyId.unique_property_id);
 
     await axios.post(`${config.awsApiUrl}/enquiry/v1/contactSeller`, payload);
     await handleAPI();

@@ -153,12 +153,13 @@ export default function HerosSection({ setSelectedCity }) {
   const fetchProfileDetails = async () => {
     try {
       const storedDetails = await AsyncStorage.getItem("userdetails");
+      console.log("storedDetails: ", storedDetails);
       if (!storedDetails) {
         return;
       }
       const parsedUserDetails = JSON.parse(storedDetails);
       const response = await axios.get(
-        `https://meetowner.in/Api/api?table=users&mobile=${parsedUserDetails?.mobile}&key=meetowner_universal&transc=get_user_det_by_mobile`
+        `https://api.meetowner.in/user/v1/getProfile?user_id=${parsedUserDetails?.id}`
       );
       const fetchedData = response.data;
       if (Array.isArray(fetchedData) && fetchedData.length > 0) {

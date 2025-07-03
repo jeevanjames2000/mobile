@@ -1,14 +1,29 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { HStack, Text as NBText } from "native-base";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import LatestPropertiesWrapper from "./LatestPropertiesWrapper";
 import BestDealPropertiesWrapper from "./BestDealPropertiesWrapper";
 import HighDealPropertiesWrapper from "./HighDemandProjectsWrapper";
 import ExclusivePropertiesWrapper from "./ExclusivePropertiesWrapper";
 import HousePickPropertiesWrapper from "./HousePickPropertiesWrapper";
 import { StyleSheet } from "react-native";
+import UserProfileModal from "../../../../utils/UserProfileModal";
+import { useUserProfileCheck } from "../../../../utils/UserProfileCheckWrapper";
 const HomeWrapper = ({ activeTab, selectedCity }) => {
+  const {
+    user,
+    showModal,
+    setShowModal,
+    checkUserProfile,
+    handleChange,
+    handleSubmit,
+  } = useUserProfileCheck();
+  useFocusEffect(
+    useCallback(() => {
+      checkUserProfile();
+    }, [])
+  );
   const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const handlePropertiesLists = useCallback(() => {
@@ -37,7 +52,6 @@ const HomeWrapper = ({ activeTab, selectedCity }) => {
         selectedCity={selectedCity}
         onApiLoaded={handleApiLoaded}
       />
-
       <BestDealPropertiesWrapper
         activeTab={activeTab}
         selectedCity={selectedCity}
@@ -73,11 +87,18 @@ const HomeWrapper = ({ activeTab, selectedCity }) => {
         selectedCity={selectedCity}
         onApiLoaded={handleApiLoaded}
       />
-
       <ExclusivePropertiesWrapper
         activeTab={activeTab}
         selectedCity={selectedCity}
         onApiLoaded={handleApiLoaded}
+      />
+      <UserProfileModal
+        visible={showModal}
+        user={user}
+        loading={loading}
+        onCancel={() => setShowModal(false)}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
       />
     </View>
   );

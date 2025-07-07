@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { Box, Image, Toast } from "native-base";
+import { Box, Image, Toast, Root } from "native-base";
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -18,28 +18,36 @@ import {
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setLoggedIn } from "../../store/slices/authSlice";
+import CountryCodeSelector from "../../utils/CountryCodeSelector";
+const RootApp = () => (
+  <Root>
+    <LoginScreen />
+  </Root>
+);
 export default function LoginScreen() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const [mobile, setMobile] = useState("");
-  const [error, setError] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
+  const [country, setCountry] = useState("");
+  const [international, setInternational] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [whatsapploading, setWhatsappLoading] = useState(false);
   const handleChange = (text) => {
     setMobile(text);
     if (text.length === 10) {
       Keyboard.dismiss();
     }
   };
-  const [isLoading, setIsLoading] = useState(false);
-  const [whatsapploading, setWhatsappLoading] = useState(false);
   const registerUser = async (type) => {
     const registerApi = "https://api.meetowner.in/auth/registernew";
     try {
       const registerResponse = await axios.post(
         registerApi,
         {
-          name: "N/A",
+          name: "",
           mobile: mobile,
-          city: 4,
+          city: "",
           userType: "user",
         },
         {
@@ -52,44 +60,40 @@ export default function LoginScreen() {
       const registerData = registerResponse.data;
       if (registerData.status === "success") {
         navigation.navigate("OtpScreen", {
-          mobile,
+          mobile: mobile,
           userDetails: registerData.user_details,
           token: registerData.accessToken,
-          isWhatsApp: type === 1 ? true : false,
+          isWhatsApp: type === 1 || international,
+          international,
+          countryCode,
         });
         dispatch(setLoggedIn(true));
         Toast.show({
           placement: "top-right",
-          render: () => {
-            return (
-              <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-                User registered successfully!
-              </Box>
-            );
-          },
+          render: () => (
+            <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              User registered successfully!
+            </Box>
+          ),
         });
       } else {
         Toast.show({
           placement: "top-right",
-          render: () => {
-            return (
-              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-                Registration failed! Please try again.
-              </Box>
-            );
-          },
+          render: () => (
+            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              Registration failed! Please try again.
+            </Box>
+          ),
         });
       }
     } catch (error) {
       Toast.show({
         placement: "top-right",
-        render: () => {
-          return (
-            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-              Registration failed! Please try again.
-            </Box>
-          );
-        },
+        render: () => (
+          <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            Registration failed! Please try again.
+          </Box>
+        ),
       });
     }
   };
@@ -101,46 +105,28 @@ export default function LoginScreen() {
           mobile: mobile,
         }
       );
-      const data = checkUserUrl.data;
-      if (checkUserUrl.status === 200) {
-        return true;
-      } else {
-        return false;
-      }
+      return checkUserUrl.status === 200;
     } catch (error) {
       return false;
     }
   };
   const handleLoginOrRegister = async (type) => {
-    if (!mobile || mobile.length != 10) {
+    if (!mobile) {
       return Toast.show({
         placement: "top-right",
-        render: () => {
-          return (
-            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-              Please enter mobile number!
-            </Box>
-          );
-        },
+        render: () => (
+          <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            Please enter a valid 10-digit mobile number!
+          </Box>
+        ),
       });
     }
-    const userExists = await checkUserExists(mobile);
+    setIsLoading(type === 0);
+    setWhatsappLoading(type === 1);
+    const selectedType = international ? 1 : type;
+    const userExists = await checkUserExists();
     if (userExists) {
-      if (type === 1) {
-        const response = await axios.post(
-          "https://api.meetowner.in/auth/loginnew",
-          {
-            mobile: mobile,
-          }
-        );
-        const logindata = response.data;
-        navigation.navigate("OtpScreen", {
-          mobile,
-          userDetails: logindata.user_details,
-          token: logindata.accessToken,
-          isWhatsApp: true,
-        });
-      } else {
+      try {
         const response = await axios.post(
           "https://api.meetowner.in/auth/loginnew",
           {
@@ -150,23 +136,32 @@ export default function LoginScreen() {
         const data = response.data;
         if (data.message === "Login successful") {
           navigation.navigate("OtpScreen", {
-            mobile,
+            mobile: mobile,
             userDetails: data.user_details,
             token: data.accessToken,
-            isWhatsApp: false,
+            isWhatsApp: selectedType === 1,
+            international,
+            countryCode,
           });
           dispatch(setLoggedIn(true));
         }
+      } catch (error) {
+        Toast.show({
+          placement: "top-right",
+          render: () => (
+            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              Login failed! Please try again.
+            </Box>
+          ),
+        });
       }
     } else {
-      if (type === 1) {
-        await registerUser(type);
-      } else {
-        await registerUser(type);
-      }
+      await registerUser(selectedType);
     }
+    setIsLoading(false);
+    setWhatsappLoading(false);
   };
-  React.useEffect(() => {
+  useEffect(() => {
     const backAction = () => {
       if (navigation.canGoBack()) {
         navigation.goBack();
@@ -183,7 +178,7 @@ export default function LoginScreen() {
       backAction
     );
     return () => backHandler.remove();
-  }, []);
+  }, [navigation]);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const bottomSheetTranslate = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -192,7 +187,7 @@ export default function LoginScreen() {
       () => {
         setKeyboardVisible(true);
         Animated.timing(bottomSheetTranslate, {
-          toValue: 100,
+          toValue: Platform.OS === "ios" ? 150 : 100,
           duration: 300,
           useNativeDriver: true,
         }).start();
@@ -237,10 +232,16 @@ export default function LoginScreen() {
               source={require("../../assets/Untitled-22.png")}
               alt="Meet Owner Logo"
               style={styles.logo2}
-              resizeMethod="contain"
+              resizeMode="contain"
             />
             <View style={styles.inputWrapper}>
-              <Text style={styles.prefix}>+91</Text>
+              <CountryCodeSelector
+                selectedCode={countryCode}
+                onSelect={(code) => {
+                  setCountryCode(code);
+                  setInternational(code !== "+91");
+                }}
+              />
               <TextInput
                 style={styles.mobileInput}
                 keyboardType="phone-pad"
@@ -251,23 +252,34 @@ export default function LoginScreen() {
                 placeholderTextColor="#ccc"
               />
             </View>
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => handleLoginOrRegister(0)}
-              disabled={isLoading}
-            >
-              <Text style={styles.loginText}>
-                {isLoading ? "Logging in..." : "Login"}
-              </Text>
-            </TouchableOpacity>
-            <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.orText}>or</Text>
-              <View style={styles.divider} />
-            </View>
+            {countryCode !== "+91" ||
+              (!international && (
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.loginButton,
+                      isLoading && styles.disabledButton,
+                    ]}
+                    onPress={() => handleLoginOrRegister(0)}
+                    disabled={isLoading}
+                  >
+                    <Text style={styles.loginText}>
+                      {isLoading ? "Logging in..." : "Login"}
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.dividerContainer}>
+                    <View style={styles.divider} />
+                    <Text style={styles.orText}>or</Text>
+                    <View style={styles.divider} />
+                  </View>
+                </>
+              ))}
             <View style={styles.logoContainer}>
               <TouchableOpacity
-                style={styles.whatsappButton}
+                style={[
+                  styles.whatsappButton,
+                  whatsapploading && styles.disabledButton,
+                ]}
                 onPress={() => handleLoginOrRegister(1)}
                 disabled={whatsapploading}
               >
@@ -323,37 +335,6 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  whatsappButton: {
-    width: "100%",
-    padding: 20,
-    borderRadius: 30,
-    backgroundColor: "#25D366",
-    alignItems: "center",
-  },
-  whatsappContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  whatsappIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
-  },
-  whatsappText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  input: {
-    width: "70%",
-    marginTop: 20,
-    height: 45,
-    borderBottomWidth: 2,
-    borderBottomColor: "#000",
-    fontSize: 16,
-    paddingLeft: 5,
-  },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -363,12 +344,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     marginTop: 5,
+    marginBottom: 10,
     backgroundColor: "#fff",
-  },
-  prefix: {
-    fontSize: 16,
-    color: "#000",
-    marginRight: 8,
   },
   mobileInput: {
     flex: 1,
@@ -382,6 +359,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: "center",
     backgroundColor: "#1D3A76",
+  },
+  disabledButton: {
+    backgroundColor: "#cccccc",
   },
   loginText: {
     color: "#fff",
@@ -405,16 +385,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  signupButton: {
+  whatsappButton: {
     width: "100%",
-    padding: 15,
+    padding: 20,
     borderRadius: 30,
     backgroundColor: "#25D366",
     alignItems: "center",
   },
-  signupText: {
-    fontSize: 16,
+  whatsappContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  whatsappIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 10,
+  },
+  whatsappText: {
     color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
   },
   footerText: {
@@ -431,32 +421,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginVertical: 1,
-  },
-  logoButton: {
-    alignItems: "center",
-    marginHorizontal: 10,
-    backgroundColor: "#fff",
-    padding: 10,
-    borderRadius: 50,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  logo: {
-    width: 30,
-    height: 30,
-    marginBottom: 0,
+    marginVertical: 10,
   },
   logo2: {
     width: 177,
     height: 60,
     marginBottom: 5,
   },
-  logoText: {
-    fontSize: 12,
-    color: "#333",
-  },
 });
+export { RootApp };

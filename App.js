@@ -51,18 +51,18 @@ export default function App() {
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NativeBaseProvider>
-        <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <NativeBaseProvider>
             <AppContent
               expoPushToken={expoPushToken}
               setNotification={setNotification}
               notificationListener={notificationListener}
               responseListener={responseListener}
             />
-          </PersistGate>
-        </Provider>
-      </NativeBaseProvider>
+          </NativeBaseProvider>
+        </PersistGate>
+      </Provider>
     </GestureHandlerRootView>
   );
 }

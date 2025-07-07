@@ -17,11 +17,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
 export default function OtpScreen() {
   const route = useRoute();
-  const { mobile, userDetails, token, isWhatsApp } = route.params || {};
-  console.log("userDetails: ", userDetails);
+  const { mobile, userDetails, token, isWhatsApp, international, countryCode } =
+    route.params || {};
+
   const navigation = useNavigation();
-  const BYPASS_NUMBERS = ["6302816551", "6305625580"];
-  const ADMIN_BYPASS_CODE = "010203";
+  const BYPASS_NUMBERS = ["6302816551", "9701652639", "6305625580"];
+  const ADMIN_BYPASS_CODE = "984870";
   const otpLength = 6;
   const [otp, setOtp] = useState("");
   const [enteredOtp, setEnteredOtp] = useState(new Array(otpLength).fill(""));
@@ -117,7 +118,10 @@ export default function OtpScreen() {
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
-      recipient: { name: "Hello", phone: `91${mobile}` },
+      recipient: {
+        name: "Hello",
+        phone: `${countryCode.replace("+", "")}${mobile}`,
+      },
       whatsapp: {
         type: "template",
         template: {
@@ -133,7 +137,7 @@ export default function OtpScreen() {
     };
     try {
       const response = await axios.post(url, payload, { headers });
-      setMessage(`WhatsApp OTP sent successfully to +91 ${mobile}`);
+      setMessage(`WhatsApp OTP sent successfully to ${countryCode} ${mobile}`);
       setError("");
       return response.data;
     } catch (error) {

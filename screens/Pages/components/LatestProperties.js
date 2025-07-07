@@ -252,14 +252,6 @@ export default function LatestProperties({ activeTab }) {
         payload
       );
       await fetchIntrestedProperties(userInfo);
-      Toast.show({
-        placement: "top-right",
-        render: () => (
-          <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-            {isAlreadyLiked ? "Removed from favorites" : "Added to favorites"}
-          </Box>
-        ),
-      });
     } catch (error) {
       console.error("Error posting interest:", error);
     }
@@ -316,8 +308,8 @@ export default function LatestProperties({ activeTab }) {
   const shareProperty = async (property) => {
     try {
       await Share.share({
-        title: property.name || "Check out this property!",
-        message: `${property.name}\nLocation: ${property.location}\nhttps://api.meetowner.in/property?unique_property_id=${property.unique_property_id}`,
+        title: property.property_name || "Check out this property!",
+        message: `${property.property_name}\nLocation: ${property.location_id}\nhttps://api.meetowner.in/property?unique_property_id=${property.unique_property_id}`,
         url: `https://api.meetowner.in/property?unique_property_id=${property.unique_property_id}`,
       });
     } catch (error) {

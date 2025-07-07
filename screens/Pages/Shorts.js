@@ -210,16 +210,19 @@ export default function Shorts({ navigation }) {
   const getOwnerDetails = useCallback(async (property) => {
     try {
       const response = await fetch(
-        `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property?.unique_property_id}`
+        `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${property?.unique_property_id}`
       );
       if (!response.ok) throw new Error(`API error: ${response.status}`);
       const data = await response.json();
-      return data.property_details?.seller_details || {};
+      const propertydata = data.property;
+      const sellerdata = propertydata.user;
+      return sellerdata || {};
     } catch (error) {
       console.error("Error fetching owner details:", error);
       return {};
     }
   }, []);
+
   const handleWhatsappChat = useCallback(
     async (property) => {
       try {

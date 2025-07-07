@@ -153,7 +153,6 @@ export default function HerosSection({ setSelectedCity }) {
   const fetchProfileDetails = async () => {
     try {
       const storedDetails = await AsyncStorage.getItem("userdetails");
-      console.log("storedDetails: ", storedDetails);
       if (!storedDetails) {
         return;
       }

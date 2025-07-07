@@ -10,7 +10,7 @@ import {
   Pressable,
   Image,
 } from "react-native";
-import { HStack, Text, Icon, StatusBar } from "native-base";
+import { HStack, Text, Icon, StatusBar, Toast } from "native-base";
 import HomeScreen from "../Pages/HomeScreen";
 import Wishlist from "../Pages/Wishlist";
 import Support from "../Pages/Support";
@@ -44,10 +44,14 @@ const HomeHeader = () => {
 
           if (!parsedUserDetails?.id) {
             setPhotoError(true);
+
             Toast.show({
-              type: "error",
-              text1: "Error",
-              text2: "User ID not found.",
+              placement: "top-right",
+              render: () => (
+                <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                  User ID not found.
+                </Box>
+              ),
             });
             return;
           }
@@ -67,10 +71,14 @@ const HomeHeader = () => {
         } catch (error) {
           console.error("Error fetching profile photo:", error);
           setPhotoError(true);
+
           Toast.show({
-            type: "error",
-            text1: "Error",
-            text2: "Failed to fetch profile image.",
+            placement: "top-right",
+            render: () => (
+              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                Failed to fetch profile image.
+              </Box>
+            ),
           });
         } finally {
           setIsImageLoading(false);
@@ -358,8 +366,8 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsSemiBold",
   },
   profileImage: {
-    width: 38,
-    height: 38,
-    borderRadius: 19, // Circular image
+    width: 40,
+    height: 40,
+    borderRadius: 19,
   },
 });

@@ -25,6 +25,7 @@ import { useFocusEffect, useRoute } from "@react-navigation/native";
 import WhatsAppIcon from "../../../assets/propertyicons/whatsapp.png";
 import UserProfileModal from "../../../utils/UserProfileModal";
 import { useUserProfileCheck } from "../../../utils/UserProfileCheckWrapper";
+import ContactActionSheet from "./propertyDetailsComponents/ContactActionSheet";
 const facilityIconMap = {
   Lift: "caret-back-circle-outline",
   CCTV: "videocam-outline",
@@ -110,38 +111,7 @@ export default function PropertyDetails({ navigation }) {
   const [isFloorPlanModalVisible, setIsFloorPlanModalVisible] = useState(false);
   const [photos, setPhotos] = useState([]);
   const [isPhotosLoading, setIsPhotosLoading] = useState(false);
-  const fetchPropertyDetails = (unique_property_id) => async (dispatch) => {
-    try {
-      const response = await fetch(
-        `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${unique_property_id}`
-      );
-      const data = await response.json();
-      if (response.ok) {
-        dispatch({
-          type: "setPropertyDetails",
-          payload: data.property_details,
-        });
-      } else {
-        throw new Error("Failed to fetch property details");
-      }
-    } catch (error) {
-      console.error("Error fetching property:", error);
-      Toast.show({
-        placement: "top-right",
-        render: () => (
-          <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-            Failed to load property details.
-          </Box>
-        ),
-      });
-    }
-  };
-  const uniquePropertyId = route.params?.unique_property_id;
-  useEffect(() => {
-    if (uniquePropertyId && uniquePropertyId !== property?.unique_property_id) {
-      dispatch(fetchPropertyDetails(uniquePropertyId));
-    }
-  }, [uniquePropertyId, property?.unique_property_id, dispatch]);
+
   const getCacheKey = () => `photos_${property?.unique_property_id}`;
   useEffect(() => {
     const getData = async () => {
@@ -212,10 +182,10 @@ export default function PropertyDetails({ navigation }) {
   const fetchFacilities = async () => {
     try {
       const response = await fetch(
-        `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${property?.unique_property_id}`
+        `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${property?.unique_property_id}`
       );
       const data = await response.json();
-      setFacilities(data?.property_details?.facilities);
+      setFacilities(data?.property?.facilities);
     } catch (error) {}
   };
   const defaultLocation = {
@@ -272,13 +242,13 @@ export default function PropertyDetails({ navigation }) {
     }
   };
 
-  const getOwnerDetails = async (property) => {
+  const getOwnerDetails = async (id) => {
     const response = await fetch(
-      `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${property?.unique_property_id}`
+      `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${id}`
     );
     const data = await response.json();
-    const propertydata = data.property_details;
-    const sellerdata = propertydata.seller_details;
+    const propertydata = data.property;
+    const sellerdata = propertydata.user;
     if (response.status === 200) {
       setOwner(sellerdata);
     }
@@ -317,10 +287,40 @@ export default function PropertyDetails({ navigation }) {
       await axios.post(url, payload, { headers });
     } catch (error) {}
   };
-  const handleScheduleVisit = () => {
-    setModalVisible(true);
-    setSelectedPropertyId(property);
-  };
+  const handleScheduleVisit = useCallback(async () => {
+    console.time("ContactActionSheetOpen");
+    try {
+      const ownerData = await getOwnerDetails(property?.unique_property_id);
+      setSelectedPropertyId(property);
+      setOwner(ownerData);
+      setModalVisible(true);
+    } catch (error) {
+      console.error("Error preloading owner details:", error);
+      Toast.show({
+        duration: 2000,
+        render: () => (
+          <Box
+            bg="red.300"
+            px="2"
+            py="1"
+            rounded="sm"
+            style={{
+              position: "absolute",
+              top: 50,
+              left: 20,
+              right: 20,
+              zIndex: 9999,
+              alignItems: "center",
+            }}
+          >
+            Failed to preload owner details.
+          </Box>
+        ),
+      });
+    }
+    console.timeEnd("ContactActionSheetOpen");
+  }, [property, getOwnerDetails]);
+
   const handleIntrests = async (type) => {
     setSelectedPropertyId(property);
     await handleAPI();
@@ -353,7 +353,7 @@ export default function PropertyDetails({ navigation }) {
   const handleWhatsappChat = useCallback(
     async (property) => {
       try {
-        let ownerData = await getOwnerDetails(property);
+        let ownerData = await getOwnerDetails(property?.unique_property_id);
         const ownerPhone = ownerData?.mobile;
         if (!ownerPhone) {
           Toast.show({
@@ -435,6 +435,7 @@ export default function PropertyDetails({ navigation }) {
       ? parseInt(value)
       : parseFloat(value).toFixed(2).replace(/\.00$/, "");
   };
+
   return (
     <View style={styles.mainContainer}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -838,38 +839,24 @@ export default function PropertyDetails({ navigation }) {
           <Text style={styles.ctaButtonText}>Contact Seller</Text>
         </TouchableOpacity>
       </View>
-      {modalVisible && (
-        <Pressable
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-          onPress={() => setModalVisible(false)}
-        >
-          <Pressable
-            onPress={(e) => e.stopPropagation()}
-            style={{
-              width: "90%",
-              backgroundColor: "#fff",
-              borderRadius: 10,
-              elevation: 5,
-            }}
-          >
-            <ShareDetailsModal
-              modalVisible={modalVisible}
-              setModalVisible={setModalVisible}
-              selectedPropertyId={selectedPropertyId}
-            />
-          </Pressable>
-        </Pressable>
-      )}
+      <ContactActionSheet
+        isOpen={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          setSelectedPropertyId(null);
+          setOwner(null);
+        }}
+        onSubmit={() => {
+          setModalVisible(false);
+          setSelectedPropertyId(null);
+          setOwner(null);
+        }}
+        title="Contact Now"
+        type="contact"
+        selectedPropertyId={selectedPropertyId}
+        userInfo={userInfo}
+        ownerData={owner}
+      />
       <UserProfileModal
         visible={showModal}
         user={user}
@@ -892,7 +879,7 @@ export default function PropertyDetails({ navigation }) {
           >
             <Ionicons name="close" size={30} color="#fff" />
           </Pressable>
-          {}
+
           <Image
             source={{ uri: floorPlan }}
             style={styles.fullScreenImage}

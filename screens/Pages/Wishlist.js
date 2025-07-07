@@ -8,6 +8,7 @@ import {
   BackHandler,
   Alert,
   Share,
+  Linking,
 } from "react-native";
 import {
   useDisclose,
@@ -40,6 +41,7 @@ import WhatsAppIcon from "../../assets/propertyicons/whatsapp.png";
 import ApprovedIcon from "../../assets/propertyicons/verified.png";
 import { useUserProfileCheck } from "../../utils/UserProfileCheckWrapper";
 import UserProfileModal from "../../utils/UserProfileModal";
+import ContactActionSheet from "./components/propertyDetailsComponents/ContactActionSheet";
 export default function Wishlist() {
   const {
     user,
@@ -60,6 +62,9 @@ export default function Wishlist() {
   const [userInfo, setUserInfo] = useState(null);
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPropertyId, setSelectedPropertyId] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [owner, setOwner] = useState("");
 
   useEffect(() => {
     const backAction = () => {
@@ -85,139 +90,148 @@ export default function Wishlist() {
     if (value >= 1000) return (value / 1000).toFixed(2) + " K";
     return value?.toString();
   };
-  const contactNow = (item) => {};
-  const PropertyCard = memo(({ item, onShare, onFav, onNavigate }) => {
-    const area = item.builtup_area
-      ? `${item.builtup_area} sqft`
-      : `${item.length_area || 0} x ${item.width_area || 0} sqft`;
-    const [isLiked, setIsLiked] = useState(true);
-    const handleFavClick = () => {
-      setIsLiked(false);
-      onFav(item);
-    };
-    return (
-      <View style={styles.containerVstack}>
-        <Pressable onPress={() => onNavigate(item)}>
-          <VStack alignItems="flex-start">
-            <View style={styles.imageContainer}>
-              <PropertyImage item={item} />
-              <View style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={() => onFav(item)}
-                >
-                  <Ionicons
-                    name={isLiked ? "heart" : "heart-outline"}
-                    size={18}
-                    color={isLiked ? "#FE4B09" : "#000"}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={() => onShare(item)}
-                >
-                  <Ionicons
-                    name="share-social-outline"
-                    size={18}
-                    color="#000"
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <HStack>
-              <Text style={styles.possesionText}>
-                {item?.occupancy === "Ready to move"
-                  ? "Ready to move"
-                  : item?.under_construction
-                  ? `Possession by ${new Date(
-                      item.under_construction
-                    ).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}`
-                  : "N/A"}
-              </Text>
-              <Text style={styles.possesionText}>|</Text>
-              <Text style={styles.possesionText}>{area}</Text>
-            </HStack>
-            <VStack style={styles.contentContainer}>
-              <HStack
-                justifyContent="space-between"
-                alignItems="center"
-                // px={2}
-                width="100%"
-              >
-                <Text
-                  numberOfLines={1}
-                  style={[styles.propertyText, { flex: 1 }]}
-                >
-                  {item.property_name || "N/A"}
-                </Text>
-
-                <HStack space={1} alignItems="center">
-                  <Image
-                    alt="approve"
-                    source={ApprovedIcon}
-                    style={{ width: 16, height: 16 }}
-                    resizeMode="contain"
-                  />
-                  <Text
-                    fontSize="12"
-                    style={{ fontFamily: "PoppinsSemiBold" }}
-                    color="green.600"
+  const contactNow = (item) => {
+    setSelectedPropertyId(item);
+    setModalVisible(true);
+  };
+  const PropertyCard = memo(
+    ({ item, onShare, onFav, onNavigate, handleWhatsappChat }) => {
+      const area = item.builtup_area
+        ? `${item.builtup_area} sqft`
+        : `${item.length_area || 0} x ${item.width_area || 0} sqft`;
+      const [isLiked, setIsLiked] = useState(true);
+      const handleFavClick = () => {
+        setIsLiked(false);
+        onFav(item);
+      };
+      return (
+        <View style={styles.containerVstack}>
+          <Pressable onPress={() => onNavigate(item)}>
+            <VStack alignItems="flex-start">
+              <View style={styles.imageContainer}>
+                <PropertyImage item={item} />
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={styles.iconButton}
+                    onPress={() => onFav(item)}
                   >
-                    Verified
+                    <Ionicons
+                      name={isLiked ? "heart" : "heart-outline"}
+                      size={18}
+                      color={isLiked ? "#FE4B09" : "#000"}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.iconButton}
+                    onPress={() => onShare(item)}
+                  >
+                    <Ionicons
+                      name="share-social-outline"
+                      size={18}
+                      color="#000"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <HStack>
+                <Text style={styles.possesionText}>
+                  {item?.occupancy === "Ready to move"
+                    ? "Ready to move"
+                    : item?.under_construction
+                    ? `Possession by ${new Date(
+                        item.under_construction
+                      ).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}`
+                    : "N/A"}
+                </Text>
+                <Text style={styles.possesionText}>|</Text>
+                <Text style={styles.possesionText}>{area}</Text>
+              </HStack>
+              <VStack style={styles.contentContainer}>
+                <HStack
+                  justifyContent="space-between"
+                  alignItems="center"
+                  // px={2}
+                  width="100%"
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.propertyText, { flex: 1 }]}
+                  >
+                    {item.property_name || "N/A"}
+                  </Text>
+
+                  <HStack space={1} alignItems="center">
+                    <Image
+                      alt="approve"
+                      source={ApprovedIcon}
+                      style={{ width: 16, height: 16 }}
+                      resizeMode="contain"
+                    />
+                    <Text
+                      fontSize="12"
+                      style={{ fontFamily: "PoppinsSemiBold" }}
+                      color="green.600"
+                    >
+                      Verified
+                    </Text>
+                  </HStack>
+                </HStack>
+                <HStack
+                  justifyContent={"space-between"}
+                  space={1}
+                  alignItems="center"
+                >
+                  <Text style={styles.propertyText}>
+                    ₹ {formatToIndianCurrency(item.property_cost || 0)}
                   </Text>
                 </HStack>
-              </HStack>
-              <HStack
-                justifyContent={"space-between"}
-                space={1}
-                alignItems="center"
-              >
                 <Text style={styles.propertyText}>
-                  ₹ {formatToIndianCurrency(item.property_cost || 0)}
+                  {item.property_in || "N/A"} | {item.sub_type || "N/A"}
                 </Text>
-              </HStack>
-              <Text style={styles.propertyText}>
-                {item.property_in || "N/A"} | {item.sub_type || "N/A"}
-              </Text>
+              </VStack>
             </VStack>
-          </VStack>
-        </Pressable>
-        <HStack
-          justifyContent="space-between"
-          space={2}
-          py={3}
-          mb={1.5}
-          px={2}
-          style={{ borderTopWidth: 2, borderTopColor: "#f5f5f5" }}
-          alignItems="center"
-        >
-          <Pressable style={styles.whatsbuttonStyles} flex={0.5}>
-            <HStack space={1} alignItems="center" justifyContent="center">
-              <Image
-                source={WhatsAppIcon}
-                alt="WhatsApp Icon"
-                width={5}
-                height={5}
-                resizeMode="contain"
-              />
-              <Text style={styles.WhatsbuttonsText}>Chat</Text>
-            </HStack>
           </Pressable>
-          <Pressable
-            style={styles.buttonStyles}
-            flex={0.5}
-            onPress={() => contactNow(item)}
+          <HStack
+            justifyContent="space-between"
+            space={2}
+            py={3}
+            mb={1.5}
+            px={2}
+            style={{ borderTopWidth: 2, borderTopColor: "#f5f5f5" }}
+            alignItems="center"
           >
-            <Text style={styles.buttonsText}>Contact</Text>
-          </Pressable>
-        </HStack>
-      </View>
-    );
-  });
+            <Pressable
+              style={styles.whatsbuttonStyles}
+              flex={0.5}
+              onPress={() => handleWhatsappChat(item)}
+            >
+              <HStack space={1} alignItems="center" justifyContent="center">
+                <Image
+                  source={WhatsAppIcon}
+                  alt="WhatsApp Icon"
+                  width={5}
+                  height={5}
+                  resizeMode="contain"
+                />
+                <Text style={styles.WhatsbuttonsText}>Chat</Text>
+              </HStack>
+            </Pressable>
+            <Pressable
+              style={styles.buttonStyles}
+              flex={0.5}
+              onPress={() => contactNow(item)}
+            >
+              <Text style={styles.buttonsText}>Contact</Text>
+            </Pressable>
+          </HStack>
+        </View>
+      );
+    }
+  );
   const fetchIntrestedProperties = async (userInfo) => {
     setIsLoading(true);
     try {
@@ -281,6 +295,77 @@ export default function Wishlist() {
       console.error("Error posting interest:", error);
     }
   };
+  const getOwnerDetails = async (id) => {
+    try {
+      const response = await fetch(
+        `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${id}`
+      );
+
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const data = await response.json();
+      const propertydata = data.property;
+      const sellerdata = propertydata.user;
+      return sellerdata || {};
+    } catch (error) {
+      return {};
+    }
+  };
+  const handleWhatsappChat = useCallback(
+    async (property) => {
+      try {
+        let ownerData = await getOwnerDetails(property.unique_property_id);
+        const ownerPhone = ownerData?.mobile;
+        if (!ownerPhone) {
+          Toast.show({
+            placement: "top-right",
+            render: () => (
+              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                Owner phone number not available.
+              </Box>
+            ),
+          });
+          return;
+        }
+        const whatsappStoreLink =
+          Platform.OS === "android"
+            ? "https://play.google.com/store/apps/details?id=com.whatsapp"
+            : "https://apps.apple.com/us/app/whatsapp-messenger/id310633997";
+        const fullUrl = `https://meetowner.app/property/${property.unique_property_id}`;
+        const ownerName = ownerData?.name || "Owner";
+        const message = `Hi ${ownerName},\nI'm interested in this property: ${property.property_name}.\n${fullUrl}\nI look forward to your assistance in the home search. Please get in touch with me at ${userInfo.mobile} to initiate the process.`;
+        const encodedMessage = encodeURIComponent(message);
+        const normalizedPhone = ownerPhone.startsWith("+")
+          ? ownerPhone.replace(/\D/g, "")
+          : `91${ownerPhone.replace(/\D/g, "")}`;
+        const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
+        const supported = await Linking.canOpenURL(whatsappUrl);
+        if (supported) {
+          await Linking.openURL(whatsappUrl);
+        } else {
+          Toast.show({
+            placement: "top-right",
+            render: () => (
+              <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+                WhatsApp is not installed. Redirecting to app store...
+              </Box>
+            ),
+          });
+          await Linking.openURL(whatsappStoreLink);
+        }
+      } catch (error) {
+        console.error("Error opening WhatsApp:", error);
+        Toast.show({
+          placement: "top-right",
+          render: () => (
+            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+              Failed to open WhatsApp chat.
+            </Box>
+          ),
+        });
+      }
+    },
+    [owner, userInfo, getOwnerDetails]
+  );
   const shareProperty = async (property) => {
     try {
       await Share.share({
@@ -339,6 +424,7 @@ export default function Wishlist() {
       getData();
     }, [])
   );
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safeArea}>
@@ -372,6 +458,7 @@ export default function Wishlist() {
                     onFav={handleInterestAPI}
                     onShare={handleShare}
                     onNavigate={onNavigate}
+                    handleWhatsappChat={handleWhatsappChat}
                   />
                 </View>
               )}
@@ -385,6 +472,21 @@ export default function Wishlist() {
               }}
             />
           )}
+          <ContactActionSheet
+            isOpen={modalVisible}
+            onClose={() => {
+              setModalVisible(false);
+              setSelectedPropertyId(null);
+            }}
+            onSubmit={() => {
+              setModalVisible(false);
+              setSelectedItem(null);
+            }}
+            userDetails={userInfo}
+            title="Enquire Now"
+            type="enquireNow"
+            selectedPropertyId={selectedPropertyId}
+          />
           <UserProfileModal
             visible={showModal}
             user={user}

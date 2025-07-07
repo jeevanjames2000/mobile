@@ -1,5 +1,4 @@
-import axios from "axios";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   View,
@@ -9,28 +8,57 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import config from "../../../../config";
-import { Toast } from "native-base";
-const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
+import { Box, useToast } from "native-base";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const ContactActionSheet = ({
+  isOpen,
+  onClose,
+  title,
+  selectedPropertyId,
+  onSubmit,
+}) => {
+  const toast = useToast();
+  const showError = (msg) => {
+    toast.show({
+      placement: "top-right",
+      render: () => (
+        <Box bg="red.300" px="2" py="1" rounded="sm" mb={5}>
+          <Text>{msg}</Text>
+        </Box>
+      ),
+    });
+  };
+
+  const showSuccess = (msg) => {
+    toast.show({
+      placement: "top-right",
+      render: () => (
+        <Box bg="green.300" px="2" py="1" rounded="sm" mb={5}>
+          <Text>{msg}</Text>
+        </Box>
+      ),
+    });
+  };
   const [formData, setFormData] = useState({ name: "", mobile: "", email: "" });
   const [userInfo, setUserInfo] = useState(null);
   const [owner, setOwner] = useState(null);
+
   const [isLoading, setIsLoading] = useState(false);
-  const getOwnerDetails = useCallback(async () => {
-    if (!selectedPropertyId?.unique_property_id) return;
-    try {
-      const res = await fetch(
-        `https://api.meetowner.in/listings/getsingleproperty?unique_property_id=${selectedPropertyId.unique_property_id}`
-      );
-      const data = await res.json();
-      if (res.ok && data?.property_details?.seller_details) {
-        setOwner(data.property_details.seller_details);
-      }
-    } catch (err) {
-      console.error("Owner fetch failed", err);
+  const getOwnerDetails = async (selectedPropertyId) => {
+    const response = await fetch(
+      `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${selectedPropertyId.unique_property_id}`
+    );
+    const data = await response.json();
+    const propertydata = data.property;
+    const sellerdata = propertydata.user;
+    if (response.status === 200) {
+      setOwner(sellerdata);
     }
-  }, [selectedPropertyId]);
+    return sellerdata;
+  };
   const loadUserDetails = async () => {
     try {
       const storedData = await AsyncStorage.getItem("userdetails");
@@ -44,18 +72,41 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
         });
       }
     } catch (error) {
-      console.error("AsyncStorage error:", error);
-      Toast.show({
-        type: "error",
-        text1: "Failed to load user details",
+      toast.show({
+        duration: 2000,
+        render: () => (
+          <Box
+            bg="red.300"
+            px="2"
+            py="1"
+            rounded="sm"
+            style={{
+              position: "absolute",
+              top: 50,
+              left: 20,
+              right: 20,
+              zIndex: 9999,
+              alignItems: "center",
+            }}
+          >
+            Missing user or owner data.
+          </Box>
+        ),
       });
+      return;
     }
   };
   useEffect(() => {
     loadUserDetails();
-    getOwnerDetails();
+    getOwnerDetails(selectedPropertyId);
   }, [selectedPropertyId]);
+
   const handleAPI = async () => {
+    if (!owner || !userInfo) {
+      showError("Missing user or owner data.");
+      return;
+    }
+
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
@@ -88,15 +139,9 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
           },
         }
       );
-      Toast.show({
-        type: "success",
-        text1: "Details submitted successfully",
-      });
+      showSuccess("Details submitted successfully.");
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "WhatsApp API failed",
-      });
+      showError("Failed to send WhatsApp message.");
     }
   };
   const handleSchedule = async () => {
@@ -115,62 +160,82 @@ const ContactActionSheet = ({ isOpen, onClose, title, selectedPropertyId }) => {
       await handleAPI();
       onClose();
     } catch (err) {
-      Toast.show({ type: "error", text1: "Submission failed" });
+      showError("Failed to submit");
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
     <Modal
       animationType="slide"
       transparent
       visible={isOpen}
       onRequestClose={onClose}
+      onBackdropPress={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.bottomSheet}>
-          <View style={styles.bottomSheetHeader}>
-            <Text style={styles.bottomSheetTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.formContainer}>
-            {["name", "mobile", "email"].map((field, index) => (
-              <React.Fragment key={index}>
-                <Text style={styles.label}>
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.backdrop}
+          onPress={onClose}
+        >
+          <View
+            style={styles.bottomSheet}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.bottomSheetHeader}>
+              <Text style={styles.bottomSheetTitle}>{title}</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.formContainer}>
+              {["name", "mobile", "email"].map((field) => (
+                <React.Fragment key={field}>
+                  <Text style={styles.label}>
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData[field]}
+                    placeholder={`Enter your ${field}`}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, [field]: text })
+                    }
+                    keyboardType={field === "mobile" ? "phone-pad" : "default"}
+                    editable={!isLoading}
+                  />
+                </React.Fragment>
+              ))}
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  isLoading && styles.submitButtonDisabled,
+                ]}
+                onPress={handleSchedule}
+                disabled={isLoading}
+              >
+                <Text style={styles.submitButtonText}>
+                  {isLoading ? "Submitting..." : "Submit"}
                 </Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData[field]}
-                  placeholder={`Enter your ${field}`}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, [field]: text })
-                  }
-                  keyboardType={field === "mobile" ? "phone-pad" : "default"}
-                />
-              </React.Fragment>
-            ))}
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleSchedule}
-              disabled={isLoading}
-            >
-              <Text style={styles.submitButtonText}>
-                {isLoading ? "Submitting..." : "Submit"}
-              </Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
     </Modal>
   );
 };
+
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  backdrop: {
+    flex: 1,
     justifyContent: "flex-end",
   },
   bottomSheet: {
@@ -224,10 +289,14 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
   },
+  submitButtonDisabled: {
+    backgroundColor: "#cccccc",
+  },
   submitButtonText: {
     color: "#fff",
     fontSize: 16,
     fontFamily: "PoppinsMedium",
   },
 });
+
 export default ContactActionSheet;

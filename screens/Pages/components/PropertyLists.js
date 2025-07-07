@@ -12,6 +12,8 @@ import {
   Box,
   Toast,
   StatusBar,
+  NativeBaseProvider,
+  Modal,
 } from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -41,6 +43,7 @@ import { setLocation } from "../../../store/slices/searchSlice";
 import { debounce } from "lodash";
 import UserProfileModal from "../../../utils/UserProfileModal";
 import { useUserProfileCheck } from "../../../utils/UserProfileCheckWrapper";
+import ContactActionSheet from "./propertyDetailsComponents/ContactActionSheet";
 const userTypeMap = {
   3: "Builder",
   4: "Agent",
@@ -379,7 +382,6 @@ export default function PropertyLists({ route }) {
   const [userDetails, setUserDetails] = useState(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
   const locationCacheRef = useRef({});
   const [userInfo, setUserInfo] = useState("");
   const [contacted, setContacted] = useState([]);
@@ -399,9 +401,7 @@ export default function PropertyLists({ route }) {
         (contact) => contact.unique_property_id
       );
       setContacted(contactIds);
-    } catch (error) {
-      console.error("Failed to fetch liked properties:", error);
-    }
+    } catch (error) {}
   };
   const [filters, setFilters] = useState({
     property_for: property_for || "Sell",
@@ -658,9 +658,7 @@ export default function PropertyLists({ route }) {
     fetchContactedProperties();
   }, []);
   const handleAPI = async (item) => {
-    console.log("item: ", item.unique_property_id);
     const owner = await getOwnerDetails(item.unique_property_id);
-    console.log("owner: ", owner);
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
@@ -735,6 +733,7 @@ export default function PropertyLists({ route }) {
         `${config.awsApiUrl}/fav/v1/postIntrest`,
         payload
       );
+      await handleAPI(property);
       await fetchIntrestedProperties(userInfo);
       Toast.show({
         placement: "top-right",
@@ -763,18 +762,15 @@ export default function PropertyLists({ route }) {
     } catch (error) {}
   };
   const getOwnerDetails = async (id) => {
-    console.log("property: ", id);
     try {
       const response = await fetch(
         `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${id}`
       );
-      console.log("response: ", response);
+
       if (!response.ok) throw new Error(`API error: ${response.status}`);
       const data = await response.json();
-      console.log("data: ", data);
       const propertydata = data.property;
       const sellerdata = propertydata.user;
-      console.log("sellerdata: ", sellerdata);
       return sellerdata || {};
     } catch (error) {
       return {};
@@ -821,7 +817,6 @@ export default function PropertyLists({ route }) {
     []
   );
   const contactNow = (item) => {
-    setSelectedItem(item);
     setSelectedPropertyId(item);
     setModalVisible(true);
   };
@@ -829,7 +824,7 @@ export default function PropertyLists({ route }) {
   const handleWhatsappChat = useCallback(
     async (property) => {
       try {
-        let ownerData = await getOwnerDetails(property);
+        let ownerData = await getOwnerDetails(property.unique_property_id);
         const ownerPhone = ownerData?.mobile;
         if (!ownerPhone) {
           Toast.show({
@@ -1000,49 +995,7 @@ export default function PropertyLists({ route }) {
             <Text style={styles.noPropertiesText}>No properties found</Text>
           </View>
         )}
-        {modalVisible && (
-          <Pressable
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.3)",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 1000,
-            }}
-            onPress={() => setModalVisible(false)}
-          >
-            <Pressable
-              onPress={(e) => e.stopPropagation()}
-              style={{
-                width: "90%",
-                backgroundColor: "#fff",
-                borderRadius: 10,
-                elevation: 5,
-              }}
-            >
-              <ShareDetailsModal
-                modalVisible={modalVisible}
-                setModalVisible={setModalVisible}
-                contacted={contacted}
-                onContactedUpdate={(newContactId) => reloadApis(newContactId)}
-                reloadApis={reloadApis}
-                selectedPropertyId={selectedPropertyId}
-              />
-            </Pressable>
-          </Pressable>
-        )}
-        <UserProfileModal
-          visible={showModal}
-          user={user}
-          loading={loading}
-          onCancel={() => setShowModal(false)}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-        />
+
         {showScrollToTop && (
           <IconButton
             position="absolute"
@@ -1056,15 +1009,47 @@ export default function PropertyLists({ route }) {
           />
         )}
       </View>
+      <ContactActionSheet
+        isOpen={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+        }}
+        onSubmit={() => {
+          setModalVisible(false);
+        }}
+        title="Contact Now"
+        type="contact"
+        selectedPropertyId={selectedPropertyId}
+        reloadApis={reloadApis}
+      />
+
+      <UserProfileModal
+        visible={showModal}
+        user={user}
+        loading={loading}
+        onCancel={() => setShowModal(false)}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+      />
     </>
   );
 }
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "#f5f5f5",
     paddingHorizontal: 10,
     paddingTop: 2,
+  },
+  modal: {
+    justifyContent: "flex-end",
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    height: "55%",
   },
   containerVstack: {
     borderRadius: 20,

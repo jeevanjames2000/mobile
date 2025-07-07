@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   TextInput,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import config from "../../../config";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Box, HStack, Text, Toast } from "native-base";
@@ -15,144 +16,149 @@ const ShareDetailsModal = ({
   modalVisible,
   setModalVisible,
   reloadApis,
-  onContactedUpdate,
   selectedPropertyId,
 }) => {
-  console.log("selectedPropertyId: ", selectedPropertyId);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
-  const [owner, setOwner] = useState("");
-  const getOwnerDetails = useCallback(async (property) => {
+  const [owner, setOwner] = useState(null);
+  const fetchUserDetails = useCallback(async () => {
     try {
-      const response = await fetch(
-        `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${property.unique_property_id}`
-      );
-      const data = await response.json();
-      const propertydata = data.property;
-      const sellerdata = propertydata.user;
-      setOwner(sellerdata);
-      if (response.ok) {
-        return sellerdata;
+      const data = await AsyncStorage.getItem("userdetails");
+      if (data) {
+        const profileData = JSON.parse(data);
+        setUserInfo(profileData);
+        setName(profileData.name || "");
+        setEmail(profileData.email || "");
+        setMobile(profileData.mobile || "");
       } else {
-        throw new Error("Failed to fetch owner details");
+        console.warn("No user details found in AsyncStorage");
       }
-    } catch (err) {
-      console.error("Error fetching owner details:", err);
-      throw err;
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      Toast.show({
+        placement: "top-right",
+        render: () => (
+          <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            Failed to load user details.
+          </Box>
+        ),
+      });
+    } finally {
+      setIsLoading(false);
     }
   }, []);
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const data = await AsyncStorage.getItem("profileData");
-        if (data) {
-          const profileData = JSON.parse(data);
-          const parsedUserDetails = profileData.data;
-          setUserInfo(parsedUserDetails);
-          setName(parsedUserDetails.name);
-          setEmail(parsedUserDetails.email || "");
-          setMobile(parsedUserDetails.mobile || "");
-        } else {
-          console.warn("No user details found in AsyncStorage");
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching user details:", error);
-        setIsLoading(false);
-        Toast.show({
-          placement: "top-right",
-          render: () => (
-            <Box bg="red.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-              Failed to load user details.
-            </Box>
-          ),
-        });
+  const fetchOwnerDetails = useCallback(async () => {
+    if (!selectedPropertyId?.unique_property_id) return;
+    try {
+      const response = await fetch(
+        `https://api.meetowner.in/listings/v1/getSingleProperty?unique_property_id=${selectedPropertyId.unique_property_id}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch owner details");
+      const {
+        property: { user: sellerData },
+      } = await response.json();
+      setOwner(sellerData);
+    } catch (err) {
+      console.error("Error fetching owner details:", err);
+    }
+  }, [selectedPropertyId?.unique_property_id]);
+  useFocusEffect(
+    useCallback(() => {
+      if (modalVisible) {
+        setIsLoading(true);
+        Promise.all([fetchUserDetails(), fetchOwnerDetails()]).finally(() =>
+          setIsLoading(false)
+        );
       }
-    };
-    getData();
-    getOwnerDetails(selectedPropertyId);
-  }, [selectedPropertyId, modalVisible]);
-  const handleAPI = async () => {
+    }, [modalVisible, fetchUserDetails, fetchOwnerDetails])
+  );
+  const sendWhatsAppMessage = useCallback(async () => {
+    if (!owner || !userInfo) return;
     const payload = {
       channelId: "67a9e14542596631a8cfc87b",
       channelType: "whatsapp",
-      recipient: { name: owner?.name, phone: `91${owner?.mobile}` },
+      recipient: { name: owner.name, phone: `91${owner?.mobile}` },
       whatsapp: {
         type: "template",
         template: {
           templateName: "leads_information_for_partners_clone",
           bodyValues: {
-            name: userInfo?.name,
-            phone: userInfo?.mobile,
+            name: userInfo.name,
+            phone: userInfo.mobile,
             variable_3: selectedPropertyId?.sub_type || "Property",
             variable_4: selectedPropertyId?.property_name,
-            variable_5: selectedPropertyId?.google_address.split(",")[0].trim(),
+            variable_5: selectedPropertyId?.google_address
+              ?.split(",")[0]
+              .trim(),
           },
         },
       },
     };
-    const headers = {
-      apiKey: "67e3a37bfa6fbc8b1aa2edcf",
-      apiSecret: "a9fe1160c20f491eb00389683b29ec6b",
-      "Content-Type": "application/json",
-    };
     try {
-      const url = "https://server.gallabox.com/devapi/messages/whatsapp";
-      const res = await axios.post(url, payload, { headers });
-
+      await axios.post(
+        "https://server.gallabox.com/devapi/messages/whatsapp",
+        payload,
+        {
+          headers: {
+            apiKey: "67e3a37bfa6fbc8b1aa2edcf",
+            apiSecret: "a9fe1160c20f491eb00389683b29ec6b",
+            "Content-Type": "application/json",
+          },
+        }
+      );
       Toast.show({
         duration: 1000,
         placement: "top-right",
-        render: () => {
-          return (
-            <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
-              Details submitted successfully.
-            </Box>
-          );
-        },
+        render: () => (
+          <Box bg="green.300" px="2" py="1" mr={5} rounded="sm" mb={5}>
+            Details submitted successfully.
+          </Box>
+        ),
       });
-      setModalVisible(false);
     } catch (error) {
-      setModalVisible(false);
-    } finally {
-      reloadApis();
-      setModalVisible(false);
-      setIsLoading(false);
+      console.error("Error sending WhatsApp message:", error);
     }
-  };
-  const handleSchedule = async () => {
-    setIsLoading(true);
-    if (name === "" || mobile === "") {
-      setIsLoading(false);
+  }, [owner, userInfo, selectedPropertyId]);
+  const handleSchedule = useCallback(async () => {
+    if (!name || !mobile) {
       Alert.alert("Error", "All fields are required");
-      return false;
+      return;
     }
-    const payload = {
-      unique_property_id: selectedPropertyId.unique_property_id,
-      user_id: userInfo.id,
-      fullname: userInfo.name,
-      mobile: userInfo.mobile,
-    };
-    onContactedUpdate(selectedPropertyId.unique_property_id);
-
-    await axios.post(`${config.awsApiUrl}/enquiry/v1/contactSeller`, payload);
-    await handleAPI();
-    await AsyncStorage.setItem(
-      `alreadySubmitted_${selectedPropertyId?.unique_property_id}`,
-      "true"
-    );
-  };
-  const handleSubmit = () => {
-    handleAPI();
-    handleSchedule();
-  };
+    if (!userInfo || !selectedPropertyId) return;
+    setIsLoading(true);
+    try {
+      await axios.post(`${config.awsApiUrl}/enquiry/v1/contactSeller`, {
+        unique_property_id: selectedPropertyId.unique_property_id,
+        user_id: userInfo.id,
+        fullname: userInfo.name || "N/A",
+        email: userInfo.email || "N/A",
+        mobile: userInfo.mobile,
+      });
+      await sendWhatsAppMessage();
+      await AsyncStorage.setItem(`alreadySubmitted`, "true");
+    } catch (error) {
+      console.error("Error in handleSchedule:", error);
+    } finally {
+      setModalVisible(false);
+      reloadApis();
+      setIsLoading(false);
+    }
+  }, [
+    name,
+    mobile,
+    userInfo,
+    selectedPropertyId,
+    sendWhatsAppMessage,
+    reloadApis,
+    setModalVisible,
+  ]);
   return (
     <View style={styles.container}>
-      <HStack justifyContent={"space-between"} mb={2} alignItems={"center"}>
-        <Text fontSize={16} fontWeight={"bold"}>
+      <HStack justifyContent="space-between" mb={2} alignItems="center">
+        <Text fontSize={16} fontWeight="bold">
           Contact Seller
         </Text>
         <TouchableOpacity
@@ -166,21 +172,22 @@ const ShareDetailsModal = ({
         placeholder="Enter Name"
         placeholderTextColor="#999"
         value={name}
-        onChangeText={(text) => setName(text)}
+        onChangeText={setName}
         style={styles.input}
+        editable={!isLoading}
       />
-
       <TextInput
         placeholder="Enter Mobile"
         placeholderTextColor="#999"
         value={mobile}
-        onChangeText={(text) => setMobile(text)}
+        onChangeText={setMobile}
         keyboardType="phone-pad"
         style={styles.input}
+        editable={!isLoading}
       />
       <TouchableOpacity
         style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleSubmit}
+        onPress={handleSchedule}
         disabled={isLoading}
       >
         <Text style={styles.buttonText}>
@@ -282,4 +289,5 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
 });
+
 export default ShareDetailsModal;

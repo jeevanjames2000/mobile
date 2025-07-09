@@ -33,6 +33,7 @@ export default function Profile() {
   const [photo, setPhoto] = useState(null);
   const [userFile, setUserFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const navigation = useNavigation();
   const handleEditProfileImage = async () => {
     const permissionResult =
@@ -172,7 +173,6 @@ export default function Profile() {
       { cancelable: false }
     );
   };
-  //submit profile details Edit profile details
   const submitProfileDetails = async () => {
     if (!name || name.trim() === "") {
       Toast.show({
@@ -346,13 +346,19 @@ export default function Profile() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.profileSection}>
           <View style={styles.imageContainer}>
-            <Image
-              source={{
-                uri: `https://api.meetowner.in/${photo}`,
-              }}
-              alt="profileImage"
-              style={styles.profileImage}
-            />
+            {photo && !imageError ? (
+              <Image
+                source={{ uri: `https://api.meetowner.in/${photo}` }}
+                style={styles.profileImage}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <View style={styles.fallbackBox}>
+                <Text style={styles.fallbackText}>
+                  {data?.name?.charAt(0)?.toUpperCase() || "?"}
+                </Text>
+              </View>
+            )}
             <TouchableOpacity
               style={styles.editIcon}
               onPress={handleEditProfileImage}
@@ -659,11 +665,26 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: "#4F46E5",
     overflow: "hidden",
+    backgroundColor: "#ddd",
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileImage: {
     width: "100%",
     height: "100%",
     borderRadius: 60,
+  },
+  fallbackBox: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ddd",
+  },
+  fallbackText: {
+    fontSize: 40,
+    color: "#1D3A76",
+    fontWeight: "bold",
   },
   editIcon: {
     position: "absolute",

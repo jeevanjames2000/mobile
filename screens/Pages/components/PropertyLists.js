@@ -254,7 +254,6 @@ const PropertyCard = memo(
         </Pressable>
         <HStack
           justifyContent="space-between"
-          space={1}
           py={3}
           mb={1.5}
           px={2}
@@ -270,6 +269,7 @@ const PropertyCard = memo(
               numberOfLines={1}
               ellipsizeMode="tail"
             >
+              {" "}
               {item?.user?.name || "Unknown"}
             </Text>
             <Text
@@ -278,6 +278,7 @@ const PropertyCard = memo(
                 { color: getUserTypeColor(item?.user?.user_type) },
               ]}
             >
+              {" "}
               {userTypeMap[item?.user?.user_type] || "Unknown"}
             </Text>
           </VStack>

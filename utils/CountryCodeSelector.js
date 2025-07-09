@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "native-base";
 import React, { useState } from "react";
 import {
   Modal,
@@ -11,7 +13,7 @@ import {
 } from "react-native";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const countries = require("./countryCodes.json");
-const CountryCodeSelector = ({ selectedCode, onSelect }) => {
+const CountryCodeSelector = ({ selectedCode, onSelect, setCountry }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [search, setSearch] = useState("");
   const filteredCountries = countries.filter(
@@ -19,13 +21,22 @@ const CountryCodeSelector = ({ selectedCode, onSelect }) => {
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.dial_code.includes(search)
   );
+  const [flag, setFlag] = useState("🇮🇳");
   return (
     <>
       <TouchableOpacity
         style={styles.codeContainer}
         onPress={() => setModalVisible(true)}
+        activeOpacity={0.7}
       >
-        <Text style={styles.codeText}>{selectedCode}</Text>
+        <View style={styles.codeContent}>
+          <Text style={styles.codeText}>
+            {flag} {selectedCode}
+          </Text>
+          <Text style={styles.dropdownIcon}>
+            <Icon as={Ionicons} name="chevron-down" size={4} color="#000" />
+          </Text>
+        </View>
       </TouchableOpacity>
       <Modal
         visible={modalVisible}
@@ -62,6 +73,8 @@ const CountryCodeSelector = ({ selectedCode, onSelect }) => {
                   style={styles.countryItem}
                   onPress={() => {
                     onSelect(item.dial_code);
+                    setCountry(item.name);
+                    setFlag(item.flag);
                     setModalVisible(false);
                   }}
                 >
@@ -84,13 +97,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 30,
     marginRight: 10,
-    borderWidth: 1,
-    borderColor: "#EAF0FF",
+    borderWidth: 0.4,
+    borderColor: "#1D3A76",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  codeContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   codeText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#000",
+  },
+  dropdownIcon: {
+    fontSize: 12,
+    marginLeft: 4,
+    color: "#555",
   },
   backdrop: {
     flex: 1,

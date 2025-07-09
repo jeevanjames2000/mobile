@@ -180,6 +180,7 @@ export default function OtpScreen() {
       setMessage(
         isWhatsApp ? "WhatsApp verification successful!" : "Login successful!"
       );
+
       setError("");
       navigation.replace("dashboard");
     } else {

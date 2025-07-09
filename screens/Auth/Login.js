@@ -29,18 +29,19 @@ export default function LoginScreen() {
   const navigation = useNavigation();
   const [mobile, setMobile] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
-  const [country, setCountry] = useState("");
+  const [country, setCountry] = useState("India");
+
   const [international, setInternational] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [whatsapploading, setWhatsappLoading] = useState(false);
   const handleChange = (text) => {
     setMobile(text);
-    if (text.length === 10) {
+    if (countryCode === "+91" && text.length === 10) {
       Keyboard.dismiss();
     }
   };
   const registerUser = async (type) => {
-    const registerApi = "https://api.meetowner.in/auth/registernew";
+    const registerApi = "https://api.meetowner.in/auth/v1/registernew";
     try {
       const registerResponse = await axios.post(
         registerApi,
@@ -49,6 +50,8 @@ export default function LoginScreen() {
           mobile: mobile,
           city: "",
           userType: "user",
+          country: country || "India",
+          country_code: countryCode || "+91",
         },
         {
           headers: {
@@ -241,13 +244,14 @@ export default function LoginScreen() {
                   setCountryCode(code);
                   setInternational(code !== "+91");
                 }}
+                setCountry={setCountry}
               />
               <TextInput
                 style={styles.mobileInput}
                 keyboardType="phone-pad"
                 value={mobile}
                 onChangeText={handleChange}
-                maxLength={10}
+                maxLength={15}
                 placeholder="Enter mobile number"
                 placeholderTextColor="#ccc"
               />
@@ -341,11 +345,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EAF0FF",
     borderRadius: 50,
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
     paddingVertical: 10,
     marginTop: 5,
     marginBottom: 10,
     backgroundColor: "#fff",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   mobileInput: {
     flex: 1,
@@ -359,6 +368,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: "center",
     backgroundColor: "#1D3A76",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   disabledButton: {
     backgroundColor: "#cccccc",
@@ -391,6 +405,11 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: "#25D366",
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   whatsappContent: {
     flexDirection: "row",

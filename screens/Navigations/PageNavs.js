@@ -10,15 +10,13 @@ import {
   Pressable,
   Image,
 } from "react-native";
-import { HStack, Text, Icon, StatusBar, Toast } from "native-base";
+import { HStack, Text, Icon, Toast, Box } from "native-base";
 import HomeScreen from "../Pages/HomeScreen";
 import Wishlist from "../Pages/Wishlist";
 import Support from "../Pages/Support";
-import Profile from "../Pages/components/Profile";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import Properties from "../Pages/components/LatestProperties";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import Shorts from "../Pages/Shorts";
 import axios from "axios";
 import { SafeAreaView } from "react-native-safe-area-context";
